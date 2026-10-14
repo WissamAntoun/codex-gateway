@@ -308,6 +308,12 @@
     "editHosts": "编辑主机",
     "editHost": "编辑连接",
     "hostManagementDescription": "查看 SSH 连接与 Codex 升级状态，管理连接或重启远端 daemon。",
+    "hostUpgradePhase": {
+      "preparing": "准备安装包",
+      "uploading": "上传安装包",
+      "installing": "安装中",
+      "restarting": "重启中"
+    },
     "managedHostCount": "{count} 台主机",
     "connectedHostCount": "{count} 台已连接",
     "upgradingHostCount": "{count} 台正在升级",

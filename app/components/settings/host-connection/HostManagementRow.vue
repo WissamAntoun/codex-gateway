@@ -19,7 +19,7 @@ const { t } = useI18n();
         <div class="rounded-lg bg-canvas-soft p-2 text-ink-secondary self-start">
           <ServerIcon class="size-5" />
         </div>
-        <div class="min-w-0 space-y-2">
+        <div class="min-w-0 flex-1 space-y-2">
           <div>
             <h3 class="truncate text-sm font-medium">{{ host.name }}</h3>
             <p class="break-all text-xs text-ink-muted">

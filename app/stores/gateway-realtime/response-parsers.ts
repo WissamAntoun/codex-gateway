@@ -3,6 +3,12 @@ import { threadHistoryTurnFromUnknown } from "~~/shared/runtime/app-server";
 
 type RealtimeResponseMessage = Extract<RealtimeServerMessage, { requestId: string }>;
 
+export function expectHostUpgradesSnapshot(message: RealtimeResponseMessage) {
+  if (message.type !== "host.upgrades.snapshot")
+    unexpectedResponse("host.upgrades.snapshot", message.type);
+  return message;
+}
+
 export function expectWebPushConfigured(message: RealtimeResponseMessage) {
   if (message.type !== "notification.webPush.configured")
     unexpectedResponse("notification.webPush.configured", message.type);

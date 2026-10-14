@@ -10,6 +10,7 @@ import type { SshConnectionPool } from "../ssh/ssh-connection";
 import type { CommandResult, HostWithSecret } from "../ssh/ssh-types";
 import { codexUpgradeError, codexUpgradeLog } from "./codex-upgrade-log";
 import { CodexUpgradeResources } from "./codex-upgrade-resources";
+import { hostUpgradeState } from "../../state/host-upgrades";
 
 const UPGRADE_IDLE_TIMEOUT_MS = 90_000;
 const UPGRADE_TOTAL_TIMEOUT_MS = 10 * 60_000;
@@ -106,8 +107,14 @@ export class CodexUpgrader {
             host,
             artifacts.standaloneArchive.localPath,
             `${stagePath}/${artifacts.standaloneArchive.fileName}`,
+            (progress) =>
+              hostUpgradeState.update(host, {
+                bytes: progress.bytes,
+                totalBytes: progress.totalBytes,
+              }),
           ),
       );
+      hostUpgradeState.update(host, { phase: "installing" });
       const remoteInstallStartedAt = Date.now();
       codexUpgradeLog("remote standalone install started", host, {
         targetVersion: version,
@@ -158,6 +165,7 @@ export class CodexUpgrader {
     upload: () => Promise<string>,
   ) {
     const startedAt = Date.now();
+    hostUpgradeState.update(host, { phase: "uploading", bytes: 0, totalBytes: bytes });
     codexUpgradeLog("artifact upload started", host, { artifact, bytes });
     await upload();
     codexUpgradeLog("artifact upload completed", host, {

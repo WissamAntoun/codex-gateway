@@ -43,7 +43,11 @@ const { isLoading, execute } = useAsyncState(
 );
 const busy = computed(() => {
   const status = catalog.hostConnectionStatuses[props.host.id]?.status;
-  return isLoading.value || hostConnectionIsBusy(status ?? "idle");
+  return (
+    isLoading.value ||
+    catalog.hostConnectionStatuses[props.host.id]?.upgradeProgress != null ||
+    hostConnectionIsBusy(status ?? "idle")
+  );
 });
 
 function confirmRestart() {

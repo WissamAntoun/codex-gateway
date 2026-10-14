@@ -2,7 +2,7 @@ import { currentGatewayUserId, runWithGatewayUser } from "../../state/memory";
 import type { HostWithSecret } from "../ssh/ssh-types";
 import { codexUpgradeError, codexUpgradeLog } from "./codex-upgrade-log";
 import { KeyedTaskLimiter } from "../concurrency/keyed-task-limiter";
-import { resolveSshConfig, sshConnectionKey } from "../ssh/ssh-config";
+import { remoteUpgradeTargetKey } from "./codex-upgrade-target";
 
 /**
  * Start upgrades for independent SSH targets immediately. Only the same physical target is
@@ -38,11 +38,4 @@ export class CodexUpgradeCoordinator {
     };
     return await (userId === null ? run() : runWithGatewayUser(userId, run));
   }
-}
-
-function remoteUpgradeTargetKey(host: HostWithSecret) {
-  // Do not include Gateway userId or the local Host name. The SSH connection key already captures
-  // the resolved host, remote username, port, proxy, auth mode, and credential fingerprint while
-  // intentionally omitting Gateway's user scope.
-  return sshConnectionKey(host, resolveSshConfig(host));
 }

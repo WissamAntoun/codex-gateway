@@ -308,6 +308,12 @@
     "editHosts": "Edit hosts",
     "editHost": "Edit connection",
     "hostManagementDescription": "View SSH connection and Codex upgrade status, manage connections, or restart a remote daemon.",
+    "hostUpgradePhase": {
+      "preparing": "Preparing package",
+      "uploading": "Uploading package",
+      "installing": "Installing",
+      "restarting": "Restarting"
+    },
     "managedHostCount": "{count} hosts",
     "connectedHostCount": "{count} connected",
     "upgradingHostCount": "{count} upgrading",

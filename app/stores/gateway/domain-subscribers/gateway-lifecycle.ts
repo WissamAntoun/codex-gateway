@@ -106,6 +106,10 @@ export function registerGatewayLifecycleSubscribers() {
         status,
         message: event.message,
         updatedAt: Number.isFinite(eventTime) ? eventTime : Date.now(),
+        // Normal SSH lifecycle events do not own upload counters. Only an upgrade update (including
+        // its explicit null at completion/failure) may replace the shared progress snapshot.
+        upgradeProgress:
+          event.upgradeProgress === undefined ? current?.upgradeProgress : event.upgradeProgress,
       },
     };
     const key = `${event.hostId}:${event.status}:${event.message}`;

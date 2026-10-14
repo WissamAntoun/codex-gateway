@@ -9,11 +9,14 @@ import HostConnectionFields from "./host-connection/HostConnectionFields.vue";
 import { emptyHostConnectionForm, hostConnectionPayload } from "./host-connection/form";
 import { useGatewayCatalogStore } from "@/stores/gateway-catalog";
 import { gatewayErrorMessage } from "@/utils/gateway-error";
+import { useHostUpgradeProgress } from "@/composables/settings/useHostUpgradeProgress";
 
 const catalog = useGatewayCatalogStore();
 const { t } = useI18n();
 const hostForm = ref(emptyHostConnectionForm());
 const adding = ref(false);
+const root = ref<HTMLElement | null>(null);
+useHostUpgradeProgress(root);
 
 const { isLoading, execute: createHost } = useAsyncState(
   async () => {
@@ -32,7 +35,7 @@ const { isLoading, execute: createHost } = useAsyncState(
 </script>
 
 <template>
-  <div class="space-y-5">
+  <div ref="root" class="space-y-5">
     <header class="flex flex-wrap items-start justify-between gap-3">
       <div class="space-y-1">
         <h2 class="flex items-center gap-2 font-medium">
