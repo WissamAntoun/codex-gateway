@@ -1,4 +1,6 @@
 import { authenticatePeer } from "./handlers/auth";
+import { restartHostDaemon } from "./handlers/host-daemon";
+import { configureWebPush, subscribeWebPush, unsubscribeWebPush } from "./handlers/web-push";
 import { subscribeHostLifecycle, unsubscribeHostLifecycle } from "./handlers/host-lifecycle";
 import {
   activateThread,
@@ -59,6 +61,10 @@ export const realtimeMessageDispatcher = new RealtimeMessageDispatcher({
   "auth.authenticate": { auth: "public", handler: authenticatePeer },
   "host.lifecycle.subscribe": subscribeHostLifecycle,
   "host.lifecycle.unsubscribe": unsubscribeHostLifecycle,
+  "host.daemon.restart": restartHostDaemon,
+  "notification.webPush.configure": configureWebPush,
+  "notification.webPush.subscribe": subscribeWebPush,
+  "notification.webPush.unsubscribe": unsubscribeWebPush,
   "host.metrics.subscribe": subscribeHostMetrics,
   "host.metrics.unsubscribe": unsubscribeHostMetrics,
   "project.defaults.read": readProjectDefaults,

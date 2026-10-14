@@ -3,6 +3,11 @@ import { openApp } from "./helpers/app";
 import { addRemoteHost, execRemoteSsh, readMfaRemoteEnv } from "./helpers/remote-codex";
 import { quote } from "shell-quote";
 import { z } from "zod";
+import {
+  confirmHostDaemonRestart,
+  openHostDaemonRestartDialog,
+  readDaemonPid,
+} from "./helpers/host-daemon";
 
 const mfaRequestSchema = z.object({ type: z.literal("host.mfa.request"), hostId: z.number() });
 
@@ -44,4 +49,14 @@ test("discovers MFA through SSH and reconnects only after sidebar action", async
   await page.getByLabel(/验证码|Verification code/).fill(remote.mfaCode ?? "123456");
   await page.getByRole("button", { name: /提交|Submit/ }).click();
   await expect(hostRow.getByLabel(/已连接|Connected/)).toBeVisible({ timeout: 60_000 });
+
+  const previousPid = await readDaemonPid(remote);
+  const previousChallengeCount = challenges.get(host.id) ?? 0;
+  await openHostDaemonRestartDialog(page, host.id);
+  await confirmHostDaemonRestart(page, host.name);
+  expect(await readDaemonPid(remote)).not.toBe(previousPid);
+  // Restart only the daemon over the authenticated Gateway SSH session. Asking for another
+  // verification code here would indicate that restart accidentally tore down that shared session.
+  expect(challenges.get(host.id) ?? 0).toBe(previousChallengeCount);
+  await expect(hostRow.getByLabel(/app-server RPC OK/)).toBeVisible();
 });

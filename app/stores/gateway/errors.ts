@@ -96,6 +96,7 @@ export function misalignmentDetailsFromNotification(
     errorType: stringValue(details.errorType),
     detailedExplanation: stringValue(details.detailedExplanation),
     steer: steerMessage === null ? null : { message: steerMessage },
+    reviewTarget: stringValue(details.reviewTarget),
   };
 }
 

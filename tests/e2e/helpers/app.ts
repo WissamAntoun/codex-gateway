@@ -19,7 +19,9 @@ export async function openApp(
 
 export async function reloadApp(page: Page) {
   await page.reload({ waitUntil: "domcontentloaded" });
-  await waitForHydratedApp(page);
+  // Reload is a user action, not a new test setup. A second browser opened with resetConfig:
+  // false must retain the shared account config just like a page already in resetPages does.
+  await waitForHydratedApp(page, { resetConfig: false });
 }
 
 export async function authenticatedFetch<T>(

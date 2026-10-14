@@ -144,7 +144,7 @@ Core rules:
 - **User-wide tmux monitoring**: scan tmux sessions across every configured Host, inspect recent pane output, and bind a monitor to the relevant Codex thread. One-shot monitors notify when the current job exits or returns to its shell; permanent monitors wait for later runs and notify after each completed run. Active monitors and history are persisted in SQLite.
 - **Multi-client sync**: multiple browser tabs can subscribe to the same thread and receive the same gateway-side app-server event stream.
 - **State repair**: after SSH/app-server reconnect, Gateway refreshes running thread state; a Nitro scheduled task also checks stale running threads.
-- **Actionable notifications**: in-browser Sonner notifications and optional server-side Bark push for completed main turns and tmux jobs. Thread notifications navigate to the conversation; tmux notifications open the matching monitor and pane output. Delivery is de-duplicated per user and completion.
+- **Actionable notifications**: in-browser Sonner alerts and optional Web Push for completed main turns, goals, user questions, and tmux jobs. Web Push takes priority; Bark is the fallback when no browser is subscribed or push delivery fails. Authorize each browser in Settings → Notifications. HTTPS is required; on iPhone/iPad, install the Home Screen app first. Push subscriptions and VAPID keys are encrypted in SQLite; logout revokes that browser session's subscription. Thread notifications open the conversation, and delivery is de-duplicated per user and completion.
 - **Mobile layout**: responsive sidebar, composer, long-press context actions, and sub-agent panels.
 - **Real E2E coverage**: Playwright tests run against a real Nuxt server, real SSH Docker target, and real Codex app-server.
 

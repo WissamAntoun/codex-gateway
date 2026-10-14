@@ -32,6 +32,7 @@ export type RemoteCodexEnv = z.infer<typeof remoteCodexEnvSchema>;
 
 export interface UiHost {
   id: number;
+  name: string;
 }
 
 export interface UiProject {
@@ -41,7 +42,7 @@ export interface UiProject {
   remotePath: string;
 }
 
-const uiHostSchema = z.object({ id: z.number().int().positive() }).loose();
+const uiHostSchema = z.object({ id: z.number().int().positive(), name: z.string().min(1) }).loose();
 const uiProjectSchema = z
   .object({
     id: z.number().int().positive(),

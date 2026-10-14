@@ -260,6 +260,10 @@ class ThreadBroker {
     this.registry.closeHost(hostId);
   }
 
+  disconnectHostTransport(hostId: number) {
+    this.registry.disconnectHostTransport(hostId);
+  }
+
   status() {
     return this.registry.status();
   }

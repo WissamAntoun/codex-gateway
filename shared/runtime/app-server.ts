@@ -116,8 +116,8 @@ const threadItemSchema = z
   })
   .loose();
 
-// Follow the App Server wire enum, not internal CodexErrorDetails variants. In 0.160.0 the new
-// ContentFilter detail maps to "other" upstream; adding it here would invent a protocol value.
+// 0.162.1 explicitly exports an open error union. Preserve unknown wire codes/details here,
+// rather than dropping an otherwise valid turn or inventing internal Codex error variants.
 const codexErrorInfoSchema = z.union([
   z.enum([
     "contextWindowExceeded",
@@ -149,11 +149,14 @@ const codexErrorInfoSchema = z.union([
   z.object({
     activeTurnNotSteerable: z.object({ turnKind: z.enum(["review", "compact"]) }).strict(),
   }),
+  z.string(),
+  z.record(z.string(), z.unknown()),
 ]);
 
 export const threadTurnSchema = z
   .object({
     id: z.string().min(1),
+    rootTurnId: z.string().nullable(),
     items: z.array(threadItemSchema),
     itemsView: z.enum(["notLoaded", "summary", "full"]),
     status: z.enum(["completed", "interrupted", "failed", "inProgress"]),
@@ -167,6 +170,7 @@ export const threadTurnSchema = z
             errorType: z.string().nullable(),
             detailedExplanation: z.string().nullable(),
             steer: z.object({ message: z.string() }).strict().nullable(),
+            reviewTarget: z.string().nullable().optional(),
           })
           .strict()
           .nullable(),

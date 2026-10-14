@@ -104,6 +104,21 @@ function migrate(db: DatabaseSync) {
       PRIMARY KEY (user_id, host_id)
     );
 
+    CREATE TABLE IF NOT EXISTS web_push_keys (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      encrypted_keys TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS web_push_subscriptions (
+      endpoint_hash TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      session_token_hash TEXT NOT NULL REFERENCES sessions(token_hash) ON DELETE CASCADE,
+      encrypted_subscription TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_web_push_subscriptions_user
+      ON web_push_subscriptions(user_id);
+
     CREATE TABLE IF NOT EXISTS tmux_monitors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

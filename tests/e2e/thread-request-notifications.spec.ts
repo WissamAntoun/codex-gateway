@@ -143,6 +143,9 @@ test("app-server error notifications use Sonner without entering the timeline", 
     }),
   );
 
+  // A delta alone does not identify a final answer. Read the recovered text through the
+  // intermediate section instead of relying on the reducer to invent an official phase.
+  await chatScrollArea.getByRole("button", { name: /中间过程/ }).click();
   await expect(chatScrollArea.getByText("retry recovered")).toBeVisible();
 });
 

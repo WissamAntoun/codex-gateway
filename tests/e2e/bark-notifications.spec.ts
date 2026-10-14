@@ -13,6 +13,12 @@ test("Bark sends ordinary turn notifications and only notifies when an app-serve
   await openApp(page);
   await configureBarkNotifications(page, bark.url, bark.deviceKey);
 
+  // A user may enable Web Push for their account before authorizing this browser. With no
+  // browser subscription, real turn completion must still reach the configured Bark device.
+  await page.getByRole("switch", { name: "启用网页通知" }).click();
+  await page.getByRole("button", { name: "保存通知设置" }).click();
+  await expect(page.getByText("通知设置已保存")).toBeVisible();
+
   const { host, project } = await remoteWorkspace.provision({
     hostName: `bark-notification-host-${Date.now()}`,
   });

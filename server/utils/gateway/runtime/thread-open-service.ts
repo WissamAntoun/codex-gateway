@@ -261,11 +261,18 @@ export class ThreadOpenService {
     snapshot: ThreadOpenSnapshot,
   ) {
     const recentEvents = gatewayEventStore.list(host.id, threadId, 0, 200);
-    const resolvedProjectId = snapshot.projectId ?? projectId;
+    // A project ID is a Gateway grouping hint, never the working directory of an existing Codex
+    // thread. Discovery IDs can be reassigned after a restart; resolve from upstream cwd even on
+    // warm cache hits so a stale pin cannot select another host's project or change turn/start cwd.
+    const resolvedProjectId = resolveProjectId(host.id, snapshot.thread.cwd);
+    if (snapshot.projectId !== resolvedProjectId) {
+      threadSnapshotStore.set(host.id, threadId, { ...snapshot, projectId: resolvedProjectId });
+    }
     runtimeLog("thread cache hit", {
       hostId: host.id,
       threadId,
       projectId: resolvedProjectId,
+      requestedProjectId: projectId,
     });
     return {
       thread: gatewayThreadFromAppServer(host.id, resolvedProjectId, snapshot.thread),
@@ -328,7 +335,16 @@ export class ThreadOpenService {
     activationController?: ThreadController,
   ) {
     const threadId = thread.id;
-    const resolvedProjectId = resolveProjectId(host.id, projectId, thread.cwd);
+    const resolvedProjectId = resolveProjectId(host.id, thread.cwd);
+    if (projectId !== null && projectId !== resolvedProjectId) {
+      runtimeLog("resolved thread project from app-server cwd", {
+        hostId: host.id,
+        threadId,
+        requestedProjectId: projectId,
+        projectId: resolvedProjectId,
+        cwd: thread.cwd,
+      });
+    }
     threadMetadataStore.record(host.id, resolvedProjectId, thread);
     const previousSnapshot = threadSnapshotStore.get(host.id, threadId);
     // The per-thread store retains at most 500 events. Reapply the complete retained window so a
@@ -384,11 +400,8 @@ function refreshKey(hostId: number, threadId: string) {
   return `${userId}:${hostId}:${threadId}`;
 }
 
-function resolveProjectId(hostId: number, projectId: number | null, cwd: unknown) {
-  if (projectId !== null || typeof cwd !== "string" || cwd.trim() === "") {
-    return projectId;
-  }
-  return projectStore.ensureForPath(hostId, cwd).id;
+function resolveProjectId(hostId: number, cwd: string) {
+  return cwd.trim() === "" ? null : projectStore.ensureForPath(hostId, cwd).id;
 }
 
 function snapshotRecentEvents(hostId: number, threadId: string) {

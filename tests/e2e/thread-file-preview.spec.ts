@@ -3,6 +3,7 @@ import { authenticatedFetch, openApp, reloadApp } from "./helpers/app";
 import { hostRecordSchema, projectRecordSchema } from "./helpers/http-schemas";
 import { seedGatewayThread } from "./helpers/gateway-store";
 import { execRemoteSsh } from "./helpers/remote-codex";
+import type { ThreadHistoryState } from "../../shared/types";
 
 test("the unified file workspace browses, restores, and refreshes real remote files", async ({
   page,
@@ -144,7 +145,7 @@ done
   );
   const origin = await page.evaluate(() => window.location.origin);
   const threadId = `file-preview-thread-${Date.now()}`;
-  const latestHistory = {
+  const latestHistory: ThreadHistoryState = {
     thread: {
       id: threadId,
       turns: [

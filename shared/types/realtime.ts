@@ -26,8 +26,12 @@ import type { ProjectFileSearchResult } from "./files";
 import type { GatewayMcpServerStatus } from "./mcp";
 import type { AgentProviderId } from "../agent/providers";
 import type { AgentProjectDefaults } from "./agent-defaults";
+import type { WebPushSubscription } from "../notifications/web-push";
 
 export type RealtimeClientMessage =
+  | { type: "notification.webPush.configure"; requestId: string }
+  | { type: "notification.webPush.subscribe"; requestId: string; subscription: WebPushSubscription }
+  | { type: "notification.webPush.unsubscribe"; requestId: string; endpoint: string }
   | {
       type: "auth.authenticate";
       token: string;
@@ -37,6 +41,11 @@ export type RealtimeClientMessage =
     }
   | {
       type: "host.lifecycle.unsubscribe";
+    }
+  | {
+      type: "host.daemon.restart";
+      requestId: string;
+      hostId: number;
     }
   | {
       type: "host.metrics.subscribe";
@@ -332,6 +341,14 @@ export type RealtimeClientMessage =
     };
 
 export type RealtimeServerMessage =
+  | { type: "notification.webPush.configured"; requestId: string; publicKey: string }
+  | { type: "notification.webPush.subscribed"; requestId: string }
+  | { type: "notification.webPush.unsubscribed"; requestId: string }
+  | {
+      type: "host.daemon.restarted";
+      requestId: string;
+      hostId: number;
+    }
   | {
       type: "ready";
       connectionId: string;

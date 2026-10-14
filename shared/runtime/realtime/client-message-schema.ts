@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { RealtimeClientMessage } from "../../types";
 import { agentProviderIdSchema } from "../../agent/providers";
 import { reasoningSummarySchema } from "../../reasoning-summary";
+import { webPushEndpointSchema, webPushSubscriptionSchema } from "../../notifications/web-push";
 import {
   nonEmptyString,
   nonNegativeId,
@@ -49,9 +50,27 @@ const collaborationMode = z
 export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.discriminatedUnion(
   "type",
   [
+    z.object({ type: z.literal("notification.webPush.configure"), ...requestIdField }).strict(),
+    z
+      .object({
+        type: z.literal("notification.webPush.subscribe"),
+        ...requestIdField,
+        subscription: webPushSubscriptionSchema,
+      })
+      .strict(),
+    z
+      .object({
+        type: z.literal("notification.webPush.unsubscribe"),
+        ...requestIdField,
+        endpoint: webPushEndpointSchema,
+      })
+      .strict(),
     z.object({ type: z.literal("auth.authenticate"), token: nonEmptyString }).strict(),
     z.object({ type: z.literal("host.lifecycle.subscribe") }).strict(),
     z.object({ type: z.literal("host.lifecycle.unsubscribe") }).strict(),
+    z
+      .object({ type: z.literal("host.daemon.restart"), ...requestIdField, hostId: positiveId })
+      .strict(),
     z
       .object({ type: z.literal("host.metrics.subscribe"), ...requestIdField, hostId: positiveId })
       .strict(),

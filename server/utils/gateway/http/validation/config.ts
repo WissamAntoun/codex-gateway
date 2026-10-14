@@ -19,6 +19,7 @@ export const pinnedThreadSchema = z
 
 export const notificationSettingsSchema = z
   .object({
+    webPush: z.object({ enabled: z.boolean() }).strict().default({ enabled: false }),
     bark: z
       .object({
         enabled: z.boolean().default(false),
@@ -67,6 +68,7 @@ export const gatewayConfigSchema = z
       .default([]),
     pinnedThreads: z.array(pinnedThreadSchema).default([]),
     notifications: notificationSettingsSchema.default({
+      webPush: { enabled: false },
       bark: {
         enabled: false,
         serverUrl: DEFAULT_BARK_SERVER_URL,
@@ -116,6 +118,7 @@ export function parseGatewayConfig(body: unknown): GatewayConfig {
       updatedAt: thread.updatedAt ?? null,
     })),
     notifications: {
+      webPush: input.notifications.webPush,
       bark: {
         enabled: input.notifications.bark.enabled,
         serverUrl: trimmedOrFallback(input.notifications.bark.serverUrl, DEFAULT_BARK_SERVER_URL),

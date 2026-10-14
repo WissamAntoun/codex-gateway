@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import type { ThreadHistoryTurn } from "../../../shared/types";
 import {
   installRealtimeThreadTimelineLoadRoute,
   realtimeThreadTimelineLoadRequests,
@@ -18,7 +19,12 @@ declare global {
   }
 }
 
-export function buildTextTurns(start: number, end: number, prefix: string, lineCount = 1) {
+export function buildTextTurns(
+  start: number,
+  end: number,
+  prefix: string,
+  lineCount = 1,
+): ThreadHistoryTurn[] {
   return Array.from({ length: end - start + 1 }, (_, index) => {
     const number = start + index;
     const label = String(number).padStart(3, "0");

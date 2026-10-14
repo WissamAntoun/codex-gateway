@@ -226,6 +226,19 @@ export class ControllerRegistry {
     }
   }
 
+  disconnectHostTransport(hostId: number) {
+    const userId = this.userKey();
+    const prefix = hostRuntimePrefix(userId, hostId);
+    for (const [key, session] of this.hostSessions) {
+      if (!key.startsWith(prefix)) continue;
+      // A daemon restart is a transport replacement, not Host deletion. Use the normal close
+      // projection to retain browser/scoped leases so already-open pages resume receiving events.
+      // Explicit client.close() does not emit the remote-close event, so dispose here exactly once.
+      this.disposeHostSession(userId, hostId, session.provider.id, session);
+      session.close();
+    }
+  }
+
   status() {
     const userId = this.userKey();
     return this.controllersForUser(userId).map((controller) => ({

@@ -96,6 +96,9 @@ export function createThreadPinningActions() {
       );
       gateway.gatewayConfig.pinnedThreads[index] = {
         ...pinnedThread,
+        // The opened snapshot resolves the project from official thread.cwd. Persist that
+        // relationship as well as its label so subsequent browsers/restarts use the same root.
+        projectId: thread.projectId,
         title: titleForThread(thread),
         projectName: project?.name ?? pinnedThread.projectName,
         subtitle: project?.remotePath ?? pinnedThread.subtitle,

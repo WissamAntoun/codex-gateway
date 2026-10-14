@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { ThreadHistoryState } from "../../shared/types";
+import type { ThreadHistoryState, ThreadHistoryTurn } from "../../shared/types";
 import { projectThreadTimelineHistory } from "../../shared/thread-history/timeline";
 import type { ThreadViewState } from "../../app/stores/gateway/types";
 import { gatewayThreadFixture } from "./fixtures/gateway-thread";
@@ -625,7 +625,7 @@ test("restoring the agent viewport reflows rows without moving a detached reader
   await expect.poll(() => visibleTextTop(page, anchor.text)).toBeLessThanOrEqual(anchor.top + 2);
 });
 
-function buildMeasuredTurns(threadId: string, lineCount: number) {
+function buildMeasuredTurns(threadId: string, lineCount: number): ThreadHistoryTurn[] {
   return [
     {
       id: "same-turn-id",

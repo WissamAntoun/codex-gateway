@@ -6,6 +6,7 @@ import type { HostRecord } from "~~/shared/types";
 import { Button } from "@codex-gateway/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@codex-gateway/ui/collapsible";
 import HostConnectionFields from "./host-connection/HostConnectionFields.vue";
+import HostDaemonRestartButton from "./host-connection/HostDaemonRestartButton.vue";
 import {
   hostConnectionFormFromRecord,
   hostConnectionPayload,
@@ -83,6 +84,7 @@ async function saveHost(host: HostRecord) {
     >
       <CollapsibleTrigger as-child>
         <Button
+          :data-testid="`host-edit-toggle-${entry.host.id}`"
           variant="ghost"
           class="h-11 w-full justify-start gap-2 rounded-md px-3"
           @click="toggleHost(entry.host.id)"
@@ -115,6 +117,7 @@ async function saveHost(host: HostRecord) {
           <CheckIcon class="size-4" />
           {{ t("app.saveHost") }}
         </Button>
+        <HostDaemonRestartButton :host="entry.host" />
       </CollapsibleContent>
     </Collapsible>
   </section>
