@@ -107,10 +107,5 @@ function pruneDanglingHostRelations(state: ReturnType<typeof currentGatewayMemor
   // lifecycle callbacks run after commit and must never mutate durable configuration: doing so
   // would make memory look correct until the next restart restores orphaned rows from SQLite.
   state.projects = state.projects.filter((project) => hostIds.has(project.hostId));
-  state.configuredProjectIds = new Set(
-    [...state.configuredProjectIds].filter((projectId) =>
-      state.projects.some((project) => project.id === projectId),
-    ),
-  );
   state.pinnedThreads = state.pinnedThreads.filter((thread) => hostIds.has(thread.hostId));
 }

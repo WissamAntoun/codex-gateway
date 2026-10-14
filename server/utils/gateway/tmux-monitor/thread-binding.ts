@@ -13,7 +13,6 @@ export function resolveTmuxThreadBinding(
     (thread) => thread.hostId === hostId && thread.threadId === requested.threadId,
   );
   return {
-    projectId: metadata?.projectId ?? pinned?.projectId ?? requested.projectId,
     threadId: requested.threadId,
     threadTitle:
       firstNonEmptyString([

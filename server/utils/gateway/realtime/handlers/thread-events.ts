@@ -8,6 +8,7 @@ import { threadRuntimeEvents } from "../../runtime/thread-runtime-events";
 import { gatewayEventStore } from "../../state/gateway-events";
 import { hostStore } from "../../state/hosts";
 import { bindGatewayUser } from "../../state/memory";
+import { commandOutputWindow } from "~~/shared/thread-history/retention";
 import {
   runPeerScoped,
   sendRealtimePeerMessage,
@@ -72,7 +73,6 @@ export async function activateThread(
     const result = await threadBroker.openThread(
       host,
       input.threadId,
-      input.projectId ?? null,
       input.limit,
       activationController,
     );
@@ -118,7 +118,6 @@ export async function startThread(
   const result = await threadBroker.startThread(
     host,
     buildThreadStartParams(input),
-    input.projectId ?? null,
     input.provider,
   );
   const threadId = String(result.thread.id);
@@ -215,7 +214,15 @@ function subscribeThreadEvents(
     // provides the same replay/live de-duplication as an ever-growing Set without retaining one
     // allocation for every token emitted during a long-running turn.
     sentThroughId = event.id;
-    sendRealtimePeerMessage(peer, { type: "thread.event", event });
+    // The monitor keeps full authoritative outputs. Bound cumulative item updates before sending
+    // them, including replay after activation: trimming only in Pinia still allocates the full
+    // command string during a mobile JSON.parse. Token deltas and event identities stay unchanged.
+    const payload = event.event;
+    const browserEvent =
+      payload.type === "timeline.item.upsert"
+        ? { ...event, event: { ...payload, item: commandOutputWindow(payload.item) } }
+        : event;
+    sendRealtimePeerMessage(peer, { type: "thread.event", event: browserEvent });
   };
 
   let replaying = true;

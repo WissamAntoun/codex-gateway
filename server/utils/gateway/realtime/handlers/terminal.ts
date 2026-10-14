@@ -2,7 +2,6 @@ import type { RealtimeClientMessage } from "~~/shared/types";
 import { firstNonEmptyString, trimmedOrNull } from "~~/shared/utils/strings";
 import { requireRecord } from "../../http/validation/common";
 import { hostStore } from "../../state/hosts";
-import { projectStore } from "../../state/projects";
 import { threadMetadataStore } from "../../state/thread-metadata";
 import { terminalEventBus } from "../../terminal/events";
 import { terminalManager } from "../../terminal/terminal-manager";
@@ -22,7 +21,6 @@ export async function openTerminal(
   const host = requireRecord(hostStore.getWithSecret(request.hostId), "Host not found");
   const target = {
     ...request,
-    projectId: request.projectId ?? null,
     threadId: request.threadId ?? null,
     cwd: resolveTerminalCwd(request),
     title: trimmedOrNull(request.title) ?? terminalTitle(request),
@@ -96,12 +94,6 @@ function resolveTerminalCwd(request: Extract<RealtimeClientMessage, { type: "ter
       return metadataCwd;
     }
   }
-  if (request.projectId !== null && request.projectId !== undefined) {
-    const project = projectStore.get(request.projectId);
-    if (project?.hostId === request.hostId && trimmedOrNull(project.remotePath) !== null) {
-      return project.remotePath.trim();
-    }
-  }
   return null;
 }
 
@@ -115,12 +107,8 @@ function terminalTitle(request: Extract<RealtimeClientMessage, { type: "terminal
       firstNonEmptyString([metadata?.title, metadata?.name, request.threadId]) ?? "Thread terminal"
     );
   }
-  if (
-    request.scope === "project" &&
-    request.projectId !== null &&
-    request.projectId !== undefined
-  ) {
-    return firstNonEmptyString([projectStore.get(request.projectId)?.name]) ?? "Project terminal";
+  if (request.scope === "project") {
+    return trimmedOrNull(request.cwd) ?? "Project terminal";
   }
   return "Host terminal";
 }

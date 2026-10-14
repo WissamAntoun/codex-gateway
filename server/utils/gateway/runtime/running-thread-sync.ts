@@ -80,7 +80,6 @@ function runningThreadCandidates(hostId: number, options: { staleOnly: boolean; 
     .map((record) => {
       return {
         threadId: record.threadId,
-        projectId: record.snapshot.projectId ?? null,
         runtimeStatus: runtimeStatusFromSnapshotState(
           record.snapshot.thread,
           record.snapshot.history,

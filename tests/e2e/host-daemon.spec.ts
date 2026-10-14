@@ -11,12 +11,12 @@ test("restarts one host daemon from settings and restores an already-open conver
   page,
   context,
   remoteWorkspace,
-}) => {
+}, testInfo) => {
   test.setTimeout(7 * 60_000);
   await openApp(page, { interceptRealtime: false });
   await resetRemoteAppServer(remoteWorkspace.remote);
   const { host, project } = await remoteWorkspace.provision();
-  const threadId = await remoteWorkspace.startThread(project.id);
+  const threadId = await remoteWorkspace.startThread(project.remotePath);
   const before = `daemon-before-${Date.now()}`;
   await sendTextTurn(page, before);
   await expect(page.getByTestId("chat-scroll-area").getByText(before, { exact: true })).toBeVisible(
@@ -40,6 +40,19 @@ test("restarts one host daemon from settings and restores an already-open conver
     await openHostDaemonRestartDialog(page, host.id);
     await page.getByRole("alertdialog").getByRole("button", { name: "取消", exact: true }).click();
     expect(await readDaemonPid(remoteWorkspace.remote)).toBe(previousPid);
+    await expect(page.getByTestId("host-name-input")).toBeHidden();
+    const edit = page.getByTestId(`host-edit-toggle-${host.id}`);
+    await edit.click();
+    await expect(
+      page
+        .getByTestId(`host-edit-form-${host.id}`)
+        .getByRole("textbox", { name: "名称", exact: true }),
+    ).toHaveValue(host.name);
+    await edit.click();
+    await expect(page.getByTestId(`host-edit-form-${host.id}`)).toBeHidden();
+    await page
+      .getByTestId("settings-dialog")
+      .screenshot({ path: testInfo.outputPath("host-management-desktop.png") });
     await page.getByTestId(`host-daemon-restart-${host.id}`).click();
     await confirmHostDaemonRestart(page, host.name);
     expect(await readDaemonPid(remoteWorkspace.remote)).not.toBe(previousPid);

@@ -18,7 +18,7 @@ test("dynamic tool response submits through the server request responder and sur
   const threadId = "e2e-dynamic-tool-thread";
   await seedGatewayThread(page, {
     hostId: 7,
-    projectId: 3,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Dynamic Tool" },
     status: "running",

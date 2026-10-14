@@ -133,7 +133,7 @@ function handleClick(event: MouseEvent) {
   event.preventDefault();
   void fileWorkspace.openFile({
     hostId,
-    projectId: filePreviewContext.projectId.value,
+    cwd: filePreviewContext.cwd.value,
     threadId,
     path: target.path,
     line: target.line,

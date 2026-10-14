@@ -3,7 +3,6 @@ import { requireRecord } from "../http/validation/common";
 import { turnStartSchema } from "../http/validation/threads";
 import { threadBroker } from "../runtime/broker";
 import { hostStore } from "../state/hosts";
-import { projectStore } from "../state/projects";
 import {
   fileReferencesAdditionalContext,
   validateProjectFileReferences,
@@ -14,12 +13,11 @@ export type RealtimeTurnStartMessage = Extract<RealtimeClientMessage, { type: "t
 export async function startTurnFromRealtime(message: RealtimeTurnStartMessage) {
   const input = turnStartSchema.parse(message);
   const host = requireRecord(hostStore.getWithSecret(input.hostId), "Host not found");
-  const project = requireRecord(projectStore.get(input.projectId), "Project not found");
-  const references = await validateProjectFileReferences(host, project, input.references);
+  const references = await validateProjectFileReferences(host, input.threadId, input.references);
   return threadBroker.startTurn(host, input.threadId, {
     text: input.text,
-    // Existing threads retain their app-server working directory. Gateway project groups can be
-    // renamed/repointed independently; sending a message must not override Codex's persisted cwd.
+    // Existing threads retain their app-server working directory. Directory selection applies
+    // to thread/start; sending a turn uses the thread's persisted cwd.
     clientUserMessageId: input.clientUserMessageId,
     model: input.model,
     effort: input.effort,

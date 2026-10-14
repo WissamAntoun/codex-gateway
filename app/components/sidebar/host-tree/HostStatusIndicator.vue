@@ -27,7 +27,16 @@ const icon = computed(() => {
   }
   return iconByStatus[props.status as keyof typeof iconByStatus] ?? null;
 });
-const label = computed(() => props.label || t(hostConnectionLabelKey(props.status)));
+const label = computed(() => {
+  const statusLabel = t(hostConnectionLabelKey(props.status));
+  const detail = props.label;
+  // Runtime details supplement the state; an RPC/version diagnostic must not replace
+  // "Connected" (or an upgrade/MFA state) in the tooltip and accessible name.
+  if (detail === null || detail === undefined || detail === "" || detail === statusLabel) {
+    return statusLabel;
+  }
+  return `${statusLabel}: ${detail}`;
+});
 const iconClass = computed(() => ({
   "animate-spin": hostConnectionIsBusy(props.status),
 }));

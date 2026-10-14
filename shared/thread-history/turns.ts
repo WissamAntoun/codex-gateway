@@ -26,6 +26,13 @@ export function mergeThreadTurns(
       ...existing,
       ...incomingTurn,
       itemsView: existing.itemsView === "full" ? "full" : incomingTurn.itemsView,
+      // Activation sends a recent tail, whereas a reader may already have paged farther back.
+      // An omitted continuation is not an instruction to forget that official cursor. Explicit
+      // null still means the incoming page reached the beginning of the Turn.
+      olderItemsCursor:
+        incomingTurn.olderItemsCursor === undefined
+          ? existing.olderItemsCursor
+          : incomingTurn.olderItemsCursor,
       items:
         direction === "prepend"
           ? mergeTurnItems(incomingItems, existingItems)

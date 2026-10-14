@@ -36,7 +36,6 @@ export interface UiHost {
 }
 
 export interface UiProject {
-  id: number;
   hostId: number;
   name: string;
   remotePath: string;
@@ -45,7 +44,6 @@ export interface UiProject {
 const uiHostSchema = z.object({ id: z.number().int().positive(), name: z.string().min(1) }).loose();
 const uiProjectSchema = z
   .object({
-    id: z.number().int().positive(),
     hostId: z.number().int().positive(),
     name: z.string().min(1),
     remotePath: z.string().min(1),
@@ -156,6 +154,7 @@ export async function addRemoteHost(
   options: { waitForConnection?: boolean } = {},
 ) {
   await openSettingsTab(page, "主机");
+  await page.getByTestId("host-create-toggle").click();
   const hostForm = page
     .getByTestId("add-host-button")
     .locator("xpath=ancestor::div[.//*[@data-testid='host-name-input']][1]");
@@ -215,17 +214,17 @@ export async function addRemoteProject(
   await page.getByTestId("add-project-button").click();
   const project = uiProjectSchema.parse(await (await projectResponsePromise).json());
   await expect(page.getByTestId(`host-button-${hostId}`)).toBeVisible();
-  await expect(page.getByTestId(`project-button-${project.id}`)).toBeVisible();
+  await expect(page.getByTestId(`project-button-${project.remotePath}`)).toBeVisible();
   return project;
 }
 
 export async function startRemoteThreadFromProjectMenu(
   page: Page,
   remote: RemoteCodexEnv,
-  projectId: number,
+  cwd: string,
 ) {
   const previousThreadId = new URL(page.url()).searchParams.get("threadId");
-  await page.getByTestId(`project-button-${projectId}`).click({ button: "right" });
+  await page.getByTestId(`project-button-${cwd}`).click({ button: "right" });
   await page.getByRole("menuitem", { name: /新建/ }).click();
   // The route still points at the previous thread for a short time after the menu click. Waiting
   // only for a non-empty threadId can therefore return the old running thread and make the next
@@ -394,10 +393,9 @@ async function currentRouteSelection(page: Page) {
   return page.evaluate(() => {
     const params = new URLSearchParams(window.location.search);
     const hostId = Number(params.get("hostId"));
-    const projectId = Number(params.get("projectId"));
     return {
       hostId: Number.isInteger(hostId) && hostId > 0 ? hostId : null,
-      projectId: Number.isInteger(projectId) && projectId > 0 ? projectId : null,
+      cwd: params.get("cwd"),
       threadId: params.get("threadId") ?? null,
     };
   });

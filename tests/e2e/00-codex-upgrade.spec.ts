@@ -105,7 +105,7 @@ test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurre
   // Refresh once before the sole product-flow test to hydrate Pinia with the surviving Host.
   await reloadApp(page);
   const project = await addRemoteProject(page, remote, host.id, `upgrade-project-${Date.now()}`);
-  const threadId = await startRemoteThreadFromProjectMenu(page, remote, project.id);
+  const threadId = await startRemoteThreadFromProjectMenu(page, remote, project.remotePath);
   const marker = `E2E 升级后发送 ${Date.now()}`;
   await sendTextTurn(page, marker, { hostId: host.id, threadId, cwd: remote.projectPath });
   await expect(page.getByTestId("chat-scroll-area").getByText(marker)).toBeVisible({
@@ -224,7 +224,7 @@ rm -f "$daemon_dir"/app-server.pid "$daemon_dir"/app-server.pid.lock "$daemon_di
 `,
   );
 
-  const threadId = await remoteWorkspace.startThread(project.id);
+  const threadId = await remoteWorkspace.startThread(project.remotePath);
   const marker = `E2E socket app-server 重启 ${Date.now()}`;
   await sendTextTurn(page, marker, { hostId: host.id, threadId, cwd: remote.projectPath });
   await expect(page.getByTestId("chat-scroll-area").getByText(marker)).toBeVisible({

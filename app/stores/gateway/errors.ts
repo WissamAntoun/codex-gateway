@@ -7,7 +7,7 @@ export type GatewayErrorKind = "appServerTurn" | "http" | "rpc" | "realtime" | "
 
 export interface GatewayErrorContext {
   hostId?: number | null;
-  projectId?: number | null;
+  cwd?: string | null;
   threadId?: string | null;
   turnId?: string | null;
 }

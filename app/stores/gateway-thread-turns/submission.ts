@@ -1,5 +1,4 @@
 import type { ComposerTurnOptions } from "~~/shared/types";
-import { useGatewayCatalogStore } from "@/stores/gateway-catalog";
 import { useGatewayBootstrapStore } from "@/stores/gateway-bootstrap";
 import { useGatewayComposerStore } from "@/stores/gateway-composer";
 import { useGatewayNavigationStore } from "@/stores/gateway-navigation";
@@ -28,7 +27,6 @@ export async function sendTurn(
   options: ComposerTurnOptions = {},
 ): Promise<boolean> {
   const sessionIsCurrent = captureSessionEpoch();
-  const catalog = useGatewayCatalogStore();
   const gateway = useGatewayBootstrapStore();
   const composer = useGatewayComposerStore();
   const navigation = useGatewayNavigationStore();
@@ -60,13 +58,7 @@ export async function sendTurn(
     insertOptimisticNewTurnMessage(threadId, clientUserMessageId, optimisticContent);
   }
 
-  const projectId = navigation.selectedProjectId;
-  if (projectId === null) {
-    gateway.setError(t("app.projectRequiredForFileReferences"), { hostId, threadId });
-    if (!shouldSteerActiveTurn) runtimeStore.setThreadStatus(hostId, threadId, "completed");
-    return false;
-  }
-  const cwd = catalog.projects.find((project) => project.id === projectId)?.remotePath ?? null;
+  const cwd = views.currentThread?.cwd ?? navigation.selectedCwd;
   const requestKind = shouldSteerActiveTurn ? "steer" : "start";
   const executeTurnRequest =
     steerTurnId !== null
@@ -74,7 +66,6 @@ export async function sendTurn(
           requestTurnSteer({
             hostId,
             threadId,
-            projectId,
             expectedTurnId: steerTurnId,
             text,
             clientUserMessageId,
@@ -84,7 +75,6 @@ export async function sendTurn(
           requestTurnStart({
             hostId,
             threadId,
-            projectId,
             text,
             clientUserMessageId,
             cwd,
@@ -96,7 +86,7 @@ export async function sendTurn(
   try {
     const result = await runTurnRequestWithAutoRetry<TurnRequestResult>(
       t,
-      { kind: requestKind, hostId, projectId, threadId, cwd, text, options },
+      { kind: requestKind, hostId, threadId, cwd, text, options },
       executeTurnRequest,
     );
     if (!sessionIsCurrent()) return false;
@@ -115,7 +105,7 @@ export async function sendTurn(
     useGatewayThreadTurnsStore().clearRequest(hostId, threadId);
     gateway.setError(messageFromError(error, t("app.sendMessageFailed"), errorMessageLabels(t)), {
       hostId,
-      projectId,
+      cwd,
       threadId,
     });
     if (!shouldSteerActiveTurn) {

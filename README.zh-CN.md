@@ -127,7 +127,7 @@ Browser
 
 ## 功能
 
-- **服务端账号与配置**：手动创建用户，Bearer token 登录，host/project/thread 配置加密存储在 SQLite。
+- **服务端账号与配置**：手动创建用户，Bearer token 登录，主机、置顶对话和通知配置加密存储在 SQLite。目录分组从 Codex 对话的工作目录生成。
 - **远端主机**：支持 SSH password、private key、ssh-agent，以及可选 SSH proxy。
 - **Codex runtime 管理**：检测远端 Codex 版本，升级旧版本，重启 stale app-server，并自动重连。
 - **会话发现与恢复**：从远端状态发现 Codex 会话，打开 thread 时优先加载较小的缓存 turn 窗口。
@@ -203,7 +203,7 @@ pnpm test:e2e
 
 | 变量 | 是否必需 | 说明 |
 | --- | --- | --- |
-| `CODEX_GATEWAY_CONFIG_SECRET` | 生产环境必需 | 用于加密保存 host/project/thread 配置的稳定 secret。 |
+| `CODEX_GATEWAY_CONFIG_SECRET` | 生产环境必需 | 用于加密保存主机、置顶对话和通知配置的稳定 secret。 |
 | `CODEX_GATEWAY_DB_PATH` | 否 | SQLite 数据库路径。Docker 默认使用 `/data/codex-gateway.db`。 |
 | `HOST` | 否 | Nuxt 监听地址。Docker 使用 `0.0.0.0`。 |
 | `PORT` | 否 | Nuxt 监听端口。Docker 使用 `3000`。 |

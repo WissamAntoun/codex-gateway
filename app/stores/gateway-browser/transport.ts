@@ -24,7 +24,7 @@ export async function openBrowserPreview(input: BrowserPreviewTarget) {
 function browserPreviewWireTarget(input: BrowserPreviewTarget): BrowserPreviewTarget {
   return {
     hostId: input.hostId,
-    projectId: input.projectId,
+    cwd: input.cwd,
     threadId: input.threadId,
     panelId: input.panelId,
     targetUrl: input.targetUrl,

@@ -20,7 +20,6 @@ interface FileTreeNode {
 
 const props = defineProps<{
   hostId: number;
-  projectId: number | null;
   threadId: string;
   rootPath: string;
   visible: boolean;
@@ -33,7 +32,6 @@ const emit = defineEmits<{
 const fileWorkspace = useGatewayFileWorkspaceStore();
 const gitWorkspace = useFileGitWorkspace({
   hostId: () => props.hostId,
-  projectId: () => props.projectId,
   rootPath: () => props.rootPath,
 });
 const fileActions = useRemoteFileTreeActions({

@@ -13,13 +13,18 @@ import { threadSnapshotStore } from "../state/thread-snapshots";
 import { threadTimelinePageStore } from "../state/thread-timeline-pages";
 import type { ControllerRegistry } from "./controller-registry";
 import { DEFAULT_TIMELINE_PAGE_LIMIT } from "./types";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import type { RecoveredTurnTail } from "./thread-tail-recovery";
 
 export class ThreadHistoryReader {
   constructor(private readonly registry: ControllerRegistry) {}
 
-  async loadInitialTimelinePage(host: HostRecord, thread: AppServerThread) {
-    return this.fetchTimelinePage(host, thread.id, null);
+  async loadInitialTimelinePage(
+    host: HostRecord,
+    thread: AppServerThread,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
+  ) {
+    return this.fetchTimelinePage(host, thread.id, null, limit);
   }
 
   async listTimelinePage(

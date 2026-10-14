@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "../../shared/config";
 import type { ThreadHistoryState, ThreadHistoryTurn } from "../../shared/types";
 import { projectThreadTimelineHistory } from "../../shared/thread-history/timeline";
 import type { ThreadViewState } from "../../app/stores/gateway/types";
@@ -59,7 +60,7 @@ test("history stays stable until an explicit older-page request prepends turns",
   });
 
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Background Turn Top Up" },
     oldestTimelineCursor: "cursor-before-oldest",
@@ -74,8 +75,8 @@ test("history stays stable until an explicit older-page request prepends turns",
   await expect(page.getByText("background turn 004")).toBeVisible();
   await expect(page.getByText("background turn 005")).toBeVisible();
   await expect(page.getByTestId("load-older-turns-button")).toHaveCount(0);
-  // Initial activation asks for two turns. The view must remain untouched instead of silently
-  // starting the old background prepend-to-five path.
+  // Initial activation pages timeline entries. Already-loaded turns remain untouched until the
+  // reader explicitly requests older history; activation must not trigger a background prepend.
   await page.waitForTimeout(250);
   expect(await threadTimelineLoadRequests(page)).toHaveLength(0);
   await startElementTopTracking(page, "background turn 004");
@@ -110,17 +111,17 @@ test("same-page thread switches retain the loaded history depth", async ({ page 
       [firstThreadId]: {
         thread: { id: firstThreadId, name: "Cached First" },
         history: firstHistory,
-        projectId: 1,
+        cwd: "/tmp/e2e",
       },
       [secondThreadId]: {
         thread: { id: secondThreadId, name: "Cached Second" },
         history: secondHistory,
-        projectId: 1,
+        cwd: "/tmp/e2e",
       },
     },
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId: firstThreadId,
     currentThread: { id: firstThreadId, name: "Cached First" },
     history: firstHistory,
@@ -147,8 +148,16 @@ test("same-page thread switches retain the loaded history depth", async ({ page 
   const rowCounts = await stopTimelineRowCountTracking(page);
   expect(Math.min(...rowCounts), JSON.stringify(rowCounts)).toBe(5);
   expect(await threadActivateRequests(page)).toEqual([
-    expect.objectContaining({ type: "thread.activate", threadId: secondThreadId, limit: 5 }),
-    expect.objectContaining({ type: "thread.activate", threadId: firstThreadId, limit: 5 }),
+    expect.objectContaining({
+      type: "thread.activate",
+      threadId: secondThreadId,
+      limit: INITIAL_TIMELINE_PAGE_LIMIT,
+    }),
+    expect.objectContaining({
+      type: "thread.activate",
+      threadId: firstThreadId,
+      limit: INITIAL_TIMELINE_PAGE_LIMIT,
+    }),
   ]);
 });
 
@@ -172,7 +181,7 @@ test("streaming output stays pinned when the user is already at the latest conte
     (_, index) => `pinned stream line ${String(index + 1).padStart(3, "0")}`,
   );
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Pinned Stream" },
     status: "running",
@@ -227,7 +236,7 @@ test("streaming Agent output keeps a manually detached reader in place", async (
     (_, index) => `manual detach line ${String(index + 1).padStart(3, "0")}`,
   );
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Manual Detach Stream" },
     status: "running",
@@ -283,7 +292,7 @@ test("dragging the native scrollbar away from latest disables bottom following",
   await openApp(page);
   const threadId = "e2e-scrollbar-thumb-detach-thread";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Scrollbar Thumb Detach" },
     status: "running",
@@ -326,7 +335,7 @@ test("a settled detached reader keeps its anchor when an already measured row ab
   await openApp(page);
   const threadId = "e2e-settled-row-reflow-thread";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Settled Row Reflow" },
     history: {
@@ -356,7 +365,7 @@ test("streaming output does not drift the viewport during upward wheel scrolling
   await openApp(page);
   const threadId = "e2e-active-wheel-stream-thread";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Active Wheel Stream" },
     status: "running",
@@ -441,7 +450,7 @@ test("downward wheel scrolling stays detached until the reader reaches latest", 
   await openApp(page);
   const threadId = "e2e-downward-wheel-stream-thread";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Downward Wheel Stream" },
     status: "running",
@@ -512,7 +521,7 @@ test("switching threads discards stale virtual row measurements", async ({ page 
   const shortThreadId = "e2e-short-measure-thread";
   await seedGatewayThread(page, {
     hostId: 1,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId: longThreadId,
     currentThread: { id: longThreadId, name: "Long Measure" },
     threads: [
@@ -532,11 +541,11 @@ test("switching threads discards stale virtual row measurements", async ({ page 
     threadViews: {
       "1:e2e-long-measure-thread": {
         hostId: 1,
-        projectId: 1,
+        cwd: "/tmp/e2e",
         threadId: longThreadId,
         currentThread: gatewayThreadFixture(
           { id: longThreadId, name: "Long Measure" },
-          { projectId: 1 },
+          { cwd: "/tmp/e2e" },
         ),
         history: {
           thread: {
@@ -553,11 +562,11 @@ test("switching threads discards stale virtual row measurements", async ({ page 
       },
       "1:e2e-short-measure-thread": {
         hostId: 1,
-        projectId: 1,
+        cwd: "/tmp/e2e",
         threadId: shortThreadId,
         currentThread: gatewayThreadFixture(
           { id: shortThreadId, name: "Short Measure" },
-          { projectId: 1 },
+          { cwd: "/tmp/e2e" },
         ),
         history: {
           thread: {
@@ -597,7 +606,7 @@ test("restoring the agent viewport reflows rows without moving a detached reader
   const threadId = "e2e-viewport-reflow-thread";
   await seedGatewayThread(page, {
     hostId: 1,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Viewport Reflow" },
     history: {
@@ -653,9 +662,9 @@ function buildMeasuredTurns(threadId: string, lineCount: number): ThreadHistoryT
 function cachedThreadView(threadId: string, history: ThreadHistoryState): ThreadViewState {
   return {
     hostId: 1,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
-    currentThread: gatewayThreadFixture({ id: threadId }, { projectId: 1 }),
+    currentThread: gatewayThreadFixture({ id: threadId }),
     history: projectThreadTimelineHistory(history),
     events: [],
     oldestTimelineCursor: null,
@@ -730,7 +739,7 @@ test("streaming output does not force scroll when the user is reading earlier co
     ),
   ];
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Scroll Anchor" },
     status: "running",
@@ -866,7 +875,7 @@ test("completed turns do not collapse intermediate steps while the user is detac
     (_, index) => `collapse anchor line ${String(index + 1).padStart(3, "0")}`,
   );
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Detached Collapse" },
     status: "running",
@@ -928,7 +937,7 @@ test("automatic intermediate collapse stays pinned without a transient jump", as
     (_, index) => `pinned collapse line ${String(index + 1).padStart(3, "0")}`,
   );
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Pinned Collapse" },
     status: "running",
@@ -982,7 +991,7 @@ test("manually expanded completed intermediate steps stay open after returning t
     (_, index) => `manual intermediate line ${String(index + 1).padStart(3, "0")}`,
   );
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Manual Intermediate Open" },
     status: "completed",
@@ -1042,7 +1051,7 @@ test("loading older turns prepends history without moving the current viewport a
     nextCursor: null,
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Load Older Anchor" },
     oldestTimelineCursor: "cursor-before-oldest",
@@ -1077,7 +1086,7 @@ test("history prepend and current Agent streaming preserve the same detached anc
     nextCursor: null,
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Concurrent Prepend Stream" },
     status: "running",

@@ -4,7 +4,7 @@ export type GatewayThreadFixture = Pick<GatewayThread, "id"> & Partial<GatewayTh
 
 export function gatewayThreadFixture(
   fixture: GatewayThreadFixture,
-  scope: { hostId?: number; projectId?: number | null } = {},
+  scope: { hostId?: number; cwd?: string | null } = {},
 ): GatewayThread {
   const now = Math.floor(Date.now() / 1000);
   const name = fixture.name ?? null;
@@ -18,7 +18,7 @@ export function gatewayThreadFixture(
     ephemeral: false,
     section: null,
     sectionEnteredAt: null,
-    appServerProjectId: null,
+    projectId: null,
     historyMode: "paginated",
     modelProvider: "e2e",
     model: "gpt-6-luna",
@@ -28,7 +28,7 @@ export function gatewayThreadFixture(
     recencyAt: now,
     status: { type: "idle" },
     path: null,
-    cwd: "/tmp/e2e",
+    cwd: scope.cwd ?? "/tmp/e2e",
     cliVersion: "0.162.1",
     originator: "app-server",
     source: "appServer",
@@ -41,7 +41,6 @@ export function gatewayThreadFixture(
     name,
     turns: [],
     hostId: scope.hostId ?? 1,
-    projectId: scope.projectId ?? null,
     pinned: false,
     title: name,
     ...fixture,

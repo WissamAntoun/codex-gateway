@@ -129,7 +129,7 @@ Core rules:
 
 ## Features
 
-- **Server-side accounts and config**: manually created users, Bearer token login, encrypted host/project/thread config in SQLite.
+- **Server-side accounts and config**: manually created users, Bearer token login, and encrypted host, pinned-thread, and notification config in SQLite. Directory groups are discovered from Codex thread working directories.
 - **Remote hosts**: SSH password, private key, ssh-agent, and optional SSH proxy support.
 - **Codex runtime management**: detects remote Codex versions, upgrades old installs, restarts stale app-server processes, and reconnects automatically.
 - **Thread discovery and restore**: discovers Codex sessions from remote state and opens threads with a small cached turn window first.
@@ -206,7 +206,7 @@ Environment variables:
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `CODEX_GATEWAY_CONFIG_SECRET` | Yes in production | Stable secret used to encrypt stored host/project/thread config. |
+| `CODEX_GATEWAY_CONFIG_SECRET` | Yes in production | Stable secret used to encrypt stored host, pinned-thread, and notification config. |
 | `CODEX_GATEWAY_DB_PATH` | No | SQLite database path. Defaults to the app data path; Docker uses `/data/codex-gateway.db`. |
 | `HOST` | No | Nuxt listen host. Docker uses `0.0.0.0`. |
 | `PORT` | No | Nuxt listen port. Docker uses `3000`. |

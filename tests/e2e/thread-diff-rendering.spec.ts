@@ -28,7 +28,7 @@ test("file diff blocks can collapse and expand after virtual timeline measuremen
 
   await seedGatewayThread(page, {
     threadId,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     currentThread: { id: threadId, name: "Diff UI", cwd: workspaceRoot },
     history: {
       thread: {
@@ -174,7 +174,7 @@ test("streaming diff keeps user-selected horizontal scroll position", async ({ p
 
   await seedGatewayThread(page, {
     threadId,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     currentThread: { id: threadId, name: "Diff Horizontal Scroll" },
     history: {
       thread: {
@@ -282,7 +282,7 @@ test("switching threads keeps asynchronously rendered diff content in normal flo
 
   await seedGatewayThread(page, {
     threadId: diffThreadId,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     status: "running",
     currentThread: { id: diffThreadId, name: "Async Diff" },
     history: diffHistory,
@@ -311,9 +311,9 @@ test("switching threads keeps asynchronously rendered diff content in normal flo
 function cachedThreadView(threadId: string, history: ThreadHistoryState): ThreadViewState {
   return {
     hostId: 1,
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
-    currentThread: gatewayThreadFixture({ id: threadId }, { projectId: 1 }),
+    currentThread: gatewayThreadFixture({ id: threadId }),
     history: projectThreadTimelineHistory(history),
     events: [],
     oldestTimelineCursor: null,

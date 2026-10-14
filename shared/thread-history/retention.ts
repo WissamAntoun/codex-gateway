@@ -49,7 +49,7 @@ export function retainThreadHistory(
       turn.status !== "inProgress" &&
       turn.id !== expandedTurnId
     ) {
-      const transcript = transcriptItems(next);
+      const transcript = threadTranscriptItems(next);
       const retained = items.filter(
         (item) => transcript.has(item) || item.pendingApproval != null || item.requestId != null,
       );
@@ -66,7 +66,7 @@ export function retainThreadHistory(
   return changed ? { thread: { ...history.thread, turns } } : history;
 }
 
-function transcriptItems(turn: ThreadHistoryTurn) {
+export function threadTranscriptItems(turn: ThreadHistoryTurn) {
   const items = turn.items ?? [];
   const final =
     items.findLast((item) => item.type === "agentMessage" && item.phase === "final_answer") ??

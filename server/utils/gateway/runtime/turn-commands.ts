@@ -1,5 +1,5 @@
 import type { HostRecord } from "~~/shared/types";
-import { INITIAL_TURN_PAGE_LIMIT } from "~~/shared/config";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import { randomUUID } from "node:crypto";
 import type { ServerRequestResponseInput, TurnStartInput, TurnSteerInput } from "./types";
 import type { ControllerRegistry } from "./controller-registry";
@@ -84,7 +84,7 @@ export class ThreadTurnCommandService {
             threadId,
             expectedTurnId: input.expectedTurnId,
           });
-          await this.openService.refreshThreadState(host, threadId, null, INITIAL_TURN_PAGE_LIMIT);
+          await this.openService.refreshThreadState(host, threadId, INITIAL_TIMELINE_PAGE_LIMIT);
         }
         throw error;
       });

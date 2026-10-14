@@ -17,7 +17,7 @@ import { z } from "zod";
 
 const storedRouteSelectionSchema = z.object({
   hostId: z.number().nullable(),
-  projectId: z.number().nullable(),
+  cwd: z.string().nullable(),
   threadId: z.string().nullable(),
 });
 
@@ -89,7 +89,7 @@ test("opening completed history does not show fake thinking", async ({ page }) =
     durationMs: null,
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Completed UI", status: { type: "idle" } },
     history: { thread: { id: threadId, turns: [activeTurn] } },
@@ -175,7 +175,7 @@ test("opening a cached thread applies terminal events before deriving composer s
         history: { thread: { id: threadId, turns: [completedTurn] } },
         threadSettings: {},
         tokenUsage: null,
-        projectId: 1,
+        cwd: "/tmp/e2e",
         project: defaultGatewayProject(),
         recentEvents: [
           gatewayEventFromNotification({
@@ -189,8 +189,8 @@ test("opening a cached thread applies terminal events before deriving composer s
       },
     },
   });
-  await seedGatewayThread(page, { projectId: 1 });
-  await openThreadInStore(page, { threadId, hostId: 1, projectId: 1 });
+  await seedGatewayThread(page, { cwd: "/tmp/e2e" });
+  await openThreadInStore(page, { threadId, hostId: 1, cwd: "/tmp/e2e" });
 
   await expect(page.getByText("cached turn is done")).toBeVisible();
   await expect.poll(() => selectedThreadStatusInStore(page)).toBe("completed");
@@ -205,14 +205,14 @@ test("opening a thread stores browser-local last open selection", async ({ page 
       [threadId]: {
         thread: { id: threadId, name: "Local Last Open Thread" },
         history: { thread: { id: threadId, turns: [] } },
-        projectId: 1,
+        cwd: "/tmp/e2e",
         project: defaultGatewayProject(),
       },
     },
   });
-  await seedGatewayThread(page, { projectId: 1, threadId: null });
+  await seedGatewayThread(page, { cwd: "/tmp/e2e", threadId: null });
 
-  await openThreadInStore(page, { threadId, hostId: 1, projectId: 1 });
+  await openThreadInStore(page, { threadId, hostId: 1, cwd: "/tmp/e2e" });
 
   await expect
     .poll(async () => {
@@ -223,7 +223,7 @@ test("opening a thread stores browser-local last open selection", async ({ page 
       );
       return stored === null ? null : storedRouteSelectionSchema.parse(JSON.parse(stored));
     })
-    .toEqual({ hostId: 1, projectId: 1, threadId });
+    .toEqual({ hostId: 1, cwd: "/tmp/e2e", threadId });
 });
 
 test("switching to cached thread history renders without waiting for the next event", async ({
@@ -232,7 +232,7 @@ test("switching to cached thread history renders without waiting for the next ev
   await openApp(page);
   const secondThreadId = "e2e-visible-second-thread";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId: secondThreadId,
     currentThread: { id: secondThreadId, name: "Second Visible Thread" },
     history: {
@@ -294,7 +294,7 @@ test("live terminal event updates selected thread even when snapshot cursor is a
     ],
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId: cursorThreadId,
     currentThread: { id: cursorThreadId, name: "Cursor Race Thread" },
     history: { thread: { id: cursorThreadId, turns: [runningTurn] } },
@@ -304,11 +304,11 @@ test("live terminal event updates selected thread even when snapshot cursor is a
     threadViews: {
       "1:e2e-terminal-cursor-thread": {
         hostId: 1,
-        projectId: 1,
+        cwd: "/tmp/e2e",
         threadId: cursorThreadId,
         currentThread: gatewayThreadFixture(
           { id: cursorThreadId, name: "Cursor Race Thread" },
-          { projectId: 1 },
+          { cwd: "/tmp/e2e" },
         ),
         history: { thread: { id: cursorThreadId, turns: [runningTurn] } },
         events: [],

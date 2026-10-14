@@ -147,7 +147,6 @@ const tokenUsageSchema = z
   .strict();
 const projectSchema = z
   .object({
-    id: positiveId,
     hostId: positiveId,
     name: z.string(),
     remotePath: z.string(),
@@ -167,7 +166,6 @@ const threadOpenResultFields = {
     .optional(),
   threadSettings: threadSettingsSchema.nullable().optional(),
   tokenUsage: tokenUsageSchema.nullable().optional(),
-  projectId: positiveId.nullable().optional(),
   project: projectSchema.nullable().optional(),
   oldestTimelineCursor: z.string().nullable(),
   recentEvents: z.array(gatewayEventSchema),
@@ -176,7 +174,6 @@ const terminalSessionSchema = z
   .object({
     sessionId: nonEmptyString,
     hostId: positiveId,
-    projectId: positiveId.nullable(),
     threadId: z.string().nullable(),
     cwd: z.string().nullable(),
     title: z.string(),
@@ -193,7 +190,7 @@ const browserSessionSchema = z
   .object({
     sessionId: nonEmptyString,
     hostId: positiveId,
-    projectId: positiveId.nullable().optional(),
+    cwd: z.string().nullable().optional(),
     threadId: z.string().nullable().optional(),
     panelId: nonEmptyString,
     targetUrl: nonEmptyString,
@@ -208,7 +205,6 @@ const notificationTargetSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("thread"),
       hostId: positiveId,
-      projectId: positiveId.nullable(),
       threadId: nonEmptyString,
     })
     .strict(),
@@ -217,7 +213,6 @@ const notificationTargetSchema = z.discriminatedUnion("kind", [
       kind: z.literal("tmuxMonitor"),
       hostId: positiveId,
       monitorId: positiveId,
-      projectId: positiveId.nullable(),
       threadId: z.string().nullable(),
     })
     .strict(),
@@ -490,7 +485,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
         type: z.literal("project.defaults.snapshot"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         defaults: agentProjectDefaultsSchema,
       })
       .strict(),
@@ -499,7 +494,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
         type: z.literal("file.search.results"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         result: projectFileSearchResultSchema,
       })
       .strict(),
@@ -508,7 +503,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
         type: z.literal("file.watch.ready"),
         ...requestIdField,
         ...threadScopeFields,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         rootPath: nonEmptyString,
         paths: z.array(nonEmptyString).min(1),
       })
@@ -517,7 +512,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
       .object({
         type: z.literal("file.watch.changed"),
         ...threadScopeFields,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         rootPath: nonEmptyString,
         paths: z.array(nonEmptyString),
       })
@@ -526,7 +521,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
       .object({
         type: z.literal("file.watch.closed"),
         ...threadScopeFields,
-        projectId: positiveId,
+        cwd: nonEmptyString,
       })
       .strict(),
     z
@@ -534,7 +529,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
         type: z.literal("file.git.comparison"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         path: nonEmptyString,
         comparison: remoteGitComparisonSchema,
       })
@@ -544,7 +539,7 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
         type: z.literal("file.git.workspace.snapshot"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         rootPath: nonEmptyString,
         snapshot: remoteGitWorkspaceSnapshotSchema,
       })

@@ -20,7 +20,7 @@ export async function shouldNotifyMainThread(
     const thread = parseAppServerThread(record?.thread ?? result);
     // Notifications for a thread opened outside Gateway still need its real title
     // and cwd. This is a volatile index only; app-server remains authoritative.
-    threadMetadataStore.record(event.hostId, null, thread);
+    threadMetadataStore.record(event.hostId, thread);
     return !isAppServerSubAgentThread(thread);
   } catch (error) {
     gatewayLog("error", "gateway", "failed to inspect thread scope before notification", {

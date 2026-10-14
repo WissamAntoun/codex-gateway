@@ -2,13 +2,11 @@ import { z } from "zod";
 import type { GatewayConfig } from "~~/shared/types";
 import { DEFAULT_BARK_GROUP, DEFAULT_BARK_SERVER_URL } from "~~/shared/config";
 import { trimmedOrFallback, trimmedOrNull } from "~~/shared/utils/strings";
-import { optionalPositiveInt } from "./common";
 import { hostBaseSchema, validateHostProxy } from "./hosts-projects";
 
 export const pinnedThreadSchema = z
   .object({
     hostId: z.coerce.number().int().positive(),
-    projectId: optionalPositiveInt.nullable().optional(),
     threadId: z.string().trim().min(1),
     title: z.string().trim().min(1),
     subtitle: z.string().trim().nullable().optional(),
@@ -39,7 +37,7 @@ export const notificationSettingsSchema = z
 
 export const gatewayConfigSchema = z
   .object({
-    version: z.literal(1).default(1),
+    version: z.literal(2).default(2),
     hosts: z
       .array(
         hostBaseSchema
@@ -50,20 +48,6 @@ export const gatewayConfigSchema = z
             updatedAt: z.string().optional(),
           })
           .superRefine(validateHostProxy),
-      )
-      .default([]),
-    projects: z
-      .array(
-        z
-          .object({
-            id: z.coerce.number().int().positive(),
-            hostId: z.coerce.number().int().positive(),
-            name: z.string().trim().min(1),
-            remotePath: z.string().trim().min(1),
-            createdAt: z.string().optional(),
-            updatedAt: z.string().optional(),
-          })
-          .strict(),
       )
       .default([]),
     pinnedThreads: z.array(pinnedThreadSchema).default([]),
@@ -83,7 +67,7 @@ export function parseGatewayConfig(body: unknown): GatewayConfig {
   const input = gatewayConfigSchema.parse(body);
   const timestamp = new Date().toISOString();
   return {
-    version: 1,
+    version: 2,
     hosts: input.hosts.map((host) => ({
       id: host.id,
       name: host.name.trim(),
@@ -100,17 +84,8 @@ export function parseGatewayConfig(body: unknown): GatewayConfig {
       createdAt: host.createdAt ?? timestamp,
       updatedAt: host.updatedAt ?? timestamp,
     })),
-    projects: input.projects.map((project) => ({
-      id: project.id,
-      hostId: project.hostId,
-      name: project.name.trim(),
-      remotePath: project.remotePath.trim(),
-      createdAt: project.createdAt ?? timestamp,
-      updatedAt: project.updatedAt ?? timestamp,
-    })),
     pinnedThreads: input.pinnedThreads.map((thread) => ({
       hostId: thread.hostId,
-      projectId: thread.projectId ?? null,
       threadId: thread.threadId.trim(),
       title: thread.title.trim(),
       subtitle: trimmedOrNull(thread.subtitle),

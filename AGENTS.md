@@ -49,7 +49,7 @@
 - 同一 host 在 gateway 后端只维护一个共享 SSH 连接；多个浏览器页面必须复用同一个 gateway-side SSH/RPC 生命周期管理。
 - Codex app-server/thread 是事实源。前端和 gateway 只做配置、索引、缓存和广播，不发明不可失效的二次 timeline。
 - 远端 Codex 低于 `SUPPORTED_CODEX_VERSION` 时，gateway 负责升级并重启 app-server；升级/重启状态必须推送到前端。
-- Host、Project、置顶等用户配置以服务端 SQLite 为事实源，敏感连接配置加密保存。订阅、运行状态和历史快照是内存运行态；浏览器可保存登录、路由、布局和文件 tab 等偏好，不用 localStorage 作为连接配置的事实源。
+- Host、置顶及通知等用户配置以服务端 SQLite 为事实源，敏感连接配置加密保存。目录分组从 Codex thread.cwd 生成，在内存中维护；对话身份使用 hostId + threadId，目录操作使用 hostId + cwd，官方 Thread.projectId 保持原样。订阅、运行状态和历史快照是内存运行态；浏览器可保存登录、路由、布局和文件 tab 等偏好，不用 localStorage 作为连接配置的事实源。
 - UI 默认中文，交互布局参考 Codex Desktop。不要做营销页或假数据页面。
 - 前端业务界面必须全局响应式布局；业务组件和业务样式禁止使用 `px` 级固定宽高、固定列宽、固定弹窗尺寸或固定字体，优先使用 Tailwind scale、`rem`、`clamp()`、`min()/max()`、`minmax()` 和容器约束。`packages/gateway-ui/`、`packages/gateway-ai-elements/` 的上游基础组件除非任务明确要求，不作为业务布局清理范围。
 - 业务组件按领域拆分；通用能力沉到 `app/components/common/` 或对应领域目录。避免单文件持续膨胀，不绕过 shadcn-vue 写平行组件体系。

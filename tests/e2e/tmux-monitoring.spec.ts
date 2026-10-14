@@ -51,7 +51,7 @@ done
   });
   await configureBarkNotifications(page, bark.url, bark.deviceKey);
   const { host, project } = await remoteWorkspace.provision({ hostName });
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
 
   await page.getByTestId("open-tmux-button").click();
   const panel = page.getByTestId("tmux-monitor-panel");
@@ -216,7 +216,7 @@ tmux new-session -d -s ${shellQuote(sessionName)} -n train`,
   await openApp(page);
   await configureBarkNotifications(page, bark.url, bark.deviceKey);
   const { host, project } = await remoteWorkspace.provision({ hostName });
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
   await page.getByTestId("open-tmux-button").click();
 
   const panel = page.getByTestId("tmux-monitor-panel");

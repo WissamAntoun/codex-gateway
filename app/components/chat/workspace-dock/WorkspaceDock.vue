@@ -26,7 +26,7 @@ const { isDark } = useTerminalTheme();
 const scopeKey = computed(() =>
   workspaceLayoutScopeKey(
     workspace.selectedHostId.value,
-    workspace.selectedProjectId.value,
+    workspace.selectedCwd.value,
     workspace.selectedThreadId.value,
   ),
 );
@@ -40,7 +40,7 @@ const {
   fileWorkspaceRoot,
 } = useWorkspacePanels({
   selectedHostId: workspace.selectedHostId,
-  selectedProjectId: workspace.selectedProjectId,
+  selectedCwd: workspace.selectedCwd,
   selectedThreadId: workspace.selectedThreadId,
 });
 const panels = useWorkspaceDockPanels({
@@ -83,7 +83,7 @@ const dockTheme = computed(() => (isDark.value ? themeDark : themeLight));
 provide(WORKSPACE_FILES_PANEL_CONTEXT, {
   layout: refs.layout,
   selectedThreadId: workspace.selectedThreadId,
-  selectedProjectId: workspace.selectedProjectId,
+  selectedCwd: workspace.selectedCwd,
   selectedHostId: workspace.selectedHostId,
   rootPath: fileWorkspaceRoot,
 });

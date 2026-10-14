@@ -30,7 +30,7 @@ import SidebarWorkspaceToolbar from "./SidebarWorkspaceToolbar.vue";
 import { useTmuxMonitorLauncher } from "@/composables/workspace/useTmuxMonitorLauncher";
 import { provideHostMfaDialog } from "@/composables/host-mfa/useHostMfaDialog";
 import type { HostTreeController } from "./host-tree/controller";
-import type { HostRecord, ProjectRecord } from "./sidebar-types";
+import type { HostRecord } from "./sidebar-types";
 
 const catalog = useGatewayCatalogStore();
 const navigation = useGatewayNavigationStore();
@@ -38,7 +38,7 @@ withDefaults(defineProps<{ workspaceToolbar?: boolean }>(), { workspaceToolbar: 
 const { t } = useI18n();
 const showSettings = ref(false);
 const showBrowserDialog = ref(false);
-const projectEditor = ref<{ host: HostRecord; project: ProjectRecord | null } | null>(null);
+const projectEditor = ref<HostRecord | null>(null);
 const { longPressTriggered, longPressContextMenuHandlers } = useLongPressContextMenu();
 const sidebarTree = useSidebarTree(longPressTriggered);
 const threadRename = useThreadRename();
@@ -60,14 +60,12 @@ const { selectedHostTitle, canLaunch } = workspaceActions;
 const { activeCount: tmuxActiveCount } = tmuxLauncher;
 const hostTreeController = computed<HostTreeController>(() => ({
   hosts: sidebarTree.hosts.value,
-  availableProjectsByHost: sidebarTree.availableProjectsByHost.value,
-  missingProjectsByHost: sidebarTree.missingProjectsByHost.value,
+  projectsByHost: sidebarTree.projectsByHost.value,
   projectThreads: sidebarTree.projectThreads.value,
   expandedHostIds: sidebarTree.expandedHostIds.value,
-  expandedProjectIds: sidebarTree.expandedProjectIds.value,
-  expandedMissingProjectHostIds: sidebarTree.expandedMissingProjectHostIds.value,
+  expandedProjectKeys: sidebarTree.expandedProjectKeys.value,
   selectedHostId: sidebarTree.selectedHostId.value,
-  selectedProjectId: sidebarTree.selectedProjectId.value,
+  selectedCwd: sidebarTree.selectedCwd.value,
   selectedThreadId: sidebarTree.selectedThreadId.value,
   hostConnectionStatuses: sidebarTree.hostConnectionStatuses.value,
   longPressHandlers: longPressContextMenuHandlers,
@@ -76,9 +74,6 @@ const hostTreeController = computed<HostTreeController>(() => ({
   deleteHost: catalog.deleteHost,
   monitorHost: openHostMonitor,
   selectProject: sidebarTree.selectProject,
-  toggleMissingProjects: sidebarTree.toggleMissingProjects,
-  editProject: openEditProject,
-  deleteProject: catalog.deleteProject,
   startThreadInProject: sidebarTree.startThreadInProject,
   openThread: sidebarTree.openThread,
   toggleThreadPin: navigation.setThreadPinned,
@@ -92,15 +87,7 @@ defineOptions({
 });
 
 function openAddProject(host: HostRecord) {
-  projectEditor.value = { host, project: null };
-}
-
-function openEditProject(project: ProjectRecord) {
-  const host = hosts.value.find((item) => item.id === project.hostId);
-  if (!host) {
-    return;
-  }
-  projectEditor.value = { host, project };
+  projectEditor.value = host;
 }
 
 async function openHostMonitor(hostId: number) {
@@ -192,8 +179,7 @@ async function openHostMonitor(hostId: number) {
 
     <AddProjectDialog
       :open="Boolean(projectEditor)"
-      :host="projectEditor?.host ?? null"
-      :project="projectEditor?.project ?? null"
+      :host="projectEditor"
       @update:open="projectEditor = $event ? projectEditor : null"
     />
 

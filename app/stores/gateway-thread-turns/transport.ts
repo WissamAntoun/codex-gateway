@@ -10,7 +10,6 @@ import {
 export function requestTurnStart(input: {
   hostId: number;
   threadId: string;
-  projectId: number;
   text: string;
   clientUserMessageId: string;
   cwd: string | null;
@@ -22,7 +21,6 @@ export function requestTurnStart(input: {
       requestId,
       hostId: input.hostId,
       threadId: input.threadId,
-      projectId: input.projectId,
       text: input.text,
       clientUserMessageId: input.clientUserMessageId,
       cwd: input.cwd ?? undefined,
@@ -61,7 +59,6 @@ export function requestThreadTimelinePage(input: {
 export function requestTurnSteer(input: {
   hostId: number;
   threadId: string;
-  projectId: number;
   expectedTurnId: string;
   text: string;
   clientUserMessageId: string;
@@ -73,7 +70,6 @@ export function requestTurnSteer(input: {
       requestId,
       hostId: input.hostId,
       threadId: input.threadId,
-      projectId: input.projectId,
       expectedTurnId: input.expectedTurnId,
       text: input.text,
       clientUserMessageId: input.clientUserMessageId,

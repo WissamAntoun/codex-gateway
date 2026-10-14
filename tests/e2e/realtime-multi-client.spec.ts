@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { devices, type Page } from "@playwright/test";
 import { expect, test } from "./fixtures/remote-workspace";
 import { openApp, reloadApp } from "./helpers/app";
 import { chatViewportBottomDistance, revealVirtualizedChatLocator } from "./helpers/scroll";
@@ -15,6 +15,74 @@ import { AGENT_OUTPUT_TIMEOUT_MS } from "./helpers/timeouts";
 
 test.describe.configure({ mode: "serial" });
 
+test("opens a running conversation in a fresh mobile browser and receives its live completion", async ({
+  browser,
+  page,
+  remoteWorkspace,
+}) => {
+  test.setTimeout(6 * 60_000);
+  await openApp(page, { interceptRealtime: false });
+  const { project } = await remoteWorkspace.provision();
+  await remoteWorkspace.startThread(project.remotePath);
+  const marker = `mobile-live-${Date.now()}`;
+  await page
+    .getByPlaceholder("输入后续修改要求")
+    .fill(
+      [
+        `执行下面的命令，然后只回复 ${marker}。不要读取输出文件。`,
+        `head -c 300000 /dev/zero | tr '\\0' x; printf '\\n${marker}-tail\\n'; sleep 45`,
+      ].join("\n"),
+    );
+  await page.getByTestId("send-turn-button").click();
+  await expect(page.getByTestId("command-status-running")).toBeVisible({
+    timeout: AGENT_OUTPUT_TIMEOUT_MS,
+  });
+  const mobileContext = await browser.newContext({
+    ...devices["Pixel 5"],
+    storageState: await page.context().storageState(),
+  });
+  const mobilePage = await mobileContext.newPage();
+  try {
+    // A fresh mobile page restores the real URL/thread and opens a warm server snapshot. No fake
+    // history or WebSocket injection: the source page's real command is still running remotely.
+    await openApp(mobilePage, { resetConfig: false, interceptRealtime: false });
+    await expect(mobilePage.getByTestId("mobile-layout")).toBeVisible();
+    await expect(mobilePage.getByTestId("command-status-running")).toBeVisible();
+    // Completion must arrive without clicking intermediate history or refreshing the page.
+    await expect(
+      mobilePage.getByTestId("chat-scroll-area").getByText(marker, { exact: true }),
+    ).toBeVisible({ timeout: AGENT_OUTPUT_TIMEOUT_MS });
+    await expect(mobilePage.getByTestId("send-turn-button")).toHaveAttribute(
+      "aria-label",
+      "已完成",
+      {
+        timeout: AGENT_OUTPUT_TIMEOUT_MS,
+      },
+    );
+    // App Server can buffer stdout until the tool yields. Inspect output after completion rather
+    // than requiring an output delta while the remote sleep is still running.
+    const toggle = firstIntermediateStepsToggle(mobilePage);
+    await revealVirtualizedChatLocator(mobilePage, toggle);
+    if ((await toggle.getAttribute("data-state")) === "closed") await toggle.click();
+    const command = mobilePage
+      .locator("[data-row-key]")
+      .filter({
+        has: mobilePage.getByTestId("command-status-completed"),
+        hasText: "head -c 300000",
+      })
+      .last();
+    await revealVirtualizedChatLocator(mobilePage, command);
+    await command.getByRole("button").first().click();
+    await expect(command.locator("pre")).toContainText(`${marker}-tail`);
+    await reloadApp(mobilePage);
+    await expect(
+      mobilePage.getByTestId("chat-scroll-area").getByText(marker, { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await mobileContext.close();
+  }
+});
+
 test("refreshes thread settings after a disconnected browser reconnects", async ({
   browser,
   page,
@@ -27,7 +95,7 @@ test("refreshes thread settings after a disconnected browser reconnects", async 
   const { project } = await remoteWorkspace.provision({
     hostName: `settings-reconnect-${Date.now()}`,
   });
-  const threadId = await remoteWorkspace.startThread(project.id);
+  const threadId = await remoteWorkspace.startThread(project.remotePath);
   await expect(page.getByTestId("model-select")).toContainText(/gpt-6-luna/i);
 
   const secondContext = await browser.newContext({
@@ -81,7 +149,7 @@ test("fans out a real remote app-server thread to multiple browser clients acros
 
   const { host, project } = await remoteWorkspace.provision();
   await expect(page.getByTestId("project-thread-list")).toBeVisible();
-  const threadId = await remoteWorkspace.startThread(project.id);
+  const threadId = await remoteWorkspace.startThread(project.remotePath);
 
   const firstMarker = `E2E 第一轮 ${Date.now()}`;
   await page
@@ -218,7 +286,7 @@ test("fans out a real remote app-server thread to multiple browser clients acros
     page.getByTestId("chat-scroll-area").getByText(steerDisplayText, { exact: true }),
   );
 
-  const backgroundThreadId = await remoteWorkspace.startThread(project.id);
+  const backgroundThreadId = await remoteWorkspace.startThread(project.remotePath);
   // startThread resolves from the App Server response before Vue has necessarily committed the
   // route and browser-local last-open selection. Capture storage only after the user-visible
   // selection has settled, otherwise the second browser can legitimately restore the prior tab.
@@ -228,7 +296,7 @@ test("fans out a real remote app-server thread to multiple browser clients acros
   const secondContext = await browser.newContext({
     storageState: await page.context().storageState(),
   });
-  await openThreadFromProjectOrRestoredState(page, host.id, project.id, threadId);
+  await openThreadFromProjectOrRestoredState(page, host.id, project.remotePath, threadId);
   const secondPage = await secondContext.newPage();
   let remoteImageRequestCount = 0;
   secondPage.on("request", (request) => {
@@ -243,7 +311,12 @@ test("fans out a real remote app-server thread to multiple browser clients acros
     // This scenario verifies cross-browser runtime fanout, not last-open restoration. Select the
     // background thread through the same project-tree action a user performs so the assertion does
     // not depend on which tab last wrote browser-local navigation while the new page was starting.
-    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.id, backgroundThreadId);
+    await openThreadFromProjectOrRestoredState(
+      secondPage,
+      host.id,
+      project.remotePath,
+      backgroundThreadId,
+    );
     await expect
       .poll(async () => currentSelectedThreadId(secondPage), { timeout: 30_000 })
       .toBe(backgroundThreadId);
@@ -274,7 +347,7 @@ test("fans out a real remote app-server thread to multiple browser clients acros
       .poll(() => threadRuntimeStatus(secondPage, host.id, threadId), { timeout: 30_000 })
       .toBe("completed");
 
-    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.id, threadId);
+    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.remotePath, threadId);
     await expect(secondPage.getByPlaceholder("输入后续修改要求")).toBeEnabled();
     await expect
       .poll(async () => secondPage.getByTestId("chat-scroll-area").getByText(firstMarker).count(), {
@@ -340,8 +413,13 @@ test("fans out a real remote app-server thread to multiple browser clients acros
       })
       .toBe("completed");
     await expect(mirroredSteer).toBeVisible({ timeout: 30_000 });
-    await openThreadFromProjectOrRestoredState(page, host.id, project.id, backgroundThreadId);
-    await openThreadFromProjectOrRestoredState(page, host.id, project.id, threadId);
+    await openThreadFromProjectOrRestoredState(
+      page,
+      host.id,
+      project.remotePath,
+      backgroundThreadId,
+    );
+    await openThreadFromProjectOrRestoredState(page, host.id, project.remotePath, threadId);
     await expect(mirroredSteer).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("send-turn-button")).toHaveAttribute("aria-label", "已完成", {
       timeout: AGENT_OUTPUT_TIMEOUT_MS,
@@ -428,8 +506,13 @@ test("fans out a real remote app-server thread to multiple browser clients acros
     await expect(imageAttachment.locator("img")).toHaveAttribute("src", /^blob:/);
     await expect.poll(() => remoteImageRequestCount).toBe(1);
 
-    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.id, backgroundThreadId);
-    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.id, threadId);
+    await openThreadFromProjectOrRestoredState(
+      secondPage,
+      host.id,
+      project.remotePath,
+      backgroundThreadId,
+    );
+    await openThreadFromProjectOrRestoredState(secondPage, host.id, project.remotePath, threadId);
     await revealVirtualizedChatLocator(secondPage, imageAttachment);
     await expect(imageAttachment.locator("img")).toHaveAttribute("src", /^blob:/);
     // Timeline virtualization intentionally destroys off-thread image DOM. The page-level Blob
@@ -515,14 +598,14 @@ function firstIntermediateStepsToggle(page: Page) {
 async function openThreadFromProjectOrRestoredState(
   page: Page,
   hostId: number,
-  projectId: number,
+  cwd: string,
   threadId: string,
 ) {
   if ((await currentSelectedThreadId(page)) === threadId) {
     return;
   }
 
-  const projectButton = page.getByTestId(`project-button-${projectId}`);
+  const projectButton = page.getByTestId(`project-button-${cwd}`);
   if (!(await projectButton.isVisible().catch(() => false))) {
     // A newly opened browser restores its own sidebar expansion state. Follow the same interaction
     // a user performs instead of assuming that another browser left this host expanded.

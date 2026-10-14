@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { INITIAL_TURN_PAGE_LIMIT } from "~~/shared/config";
-import { optionalPositiveInt } from "./common";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import { agentProviderIdSchema } from "~~/shared/agent/providers";
 import { reasoningSummarySchema } from "~~/shared/reasoning-summary";
 
 export const threadListSchema = z.object({
   hostId: z.coerce.number().int().positive(),
-  projectId: optionalPositiveInt,
   cwd: z.string().trim().nullable().optional(),
   searchTerm: z.string().trim().nullable().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),
@@ -16,9 +14,8 @@ export const threadListSchema = z.object({
 
 export const threadOpenSchema = z.object({
   hostId: z.coerce.number().int().positive(),
-  projectId: optionalPositiveInt,
   threadId: z.string().trim().min(1),
-  limit: z.coerce.number().int().min(1).max(100).default(INITIAL_TURN_PAGE_LIMIT),
+  limit: z.coerce.number().int().min(1).max(100).default(INITIAL_TIMELINE_PAGE_LIMIT),
 });
 
 export const threadMetadataListSchema = z.object({
@@ -74,7 +71,6 @@ const fileReferenceSchema = z
 
 export const threadStartSchema = z.object({
   hostId: z.coerce.number().int().positive(),
-  projectId: optionalPositiveInt,
   cwd: z.string().trim().nullable().optional(),
   provider: agentProviderIdSchema.optional(),
   ...threadSettingFields,
@@ -89,7 +85,6 @@ export const threadSettingsUpdateSchema = z.object({
 
 export const turnStartSchema = z.object({
   hostId: z.coerce.number().int().positive(),
-  projectId: z.coerce.number().int().positive(),
   threadId: z.string().trim().min(1),
   text: z.string().trim().default(""),
   clientUserMessageId: z.string().trim().nullable().optional(),
@@ -113,7 +108,6 @@ export const turnStartSchema = z.object({
 
 export const turnSteerSchema = z.object({
   hostId: z.coerce.number().int().positive(),
-  projectId: z.coerce.number().int().positive(),
   threadId: z.string().trim().min(1),
   expectedTurnId: z.string().trim().min(1),
   text: z.string().trim().default(""),

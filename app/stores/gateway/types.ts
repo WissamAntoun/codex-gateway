@@ -7,7 +7,6 @@ import type {
   ThreadRuntimeStatus,
   UploadedFileRecord,
   FileReference,
-  ProjectDirectoryAvailability,
   ProjectRecord,
 } from "~~/shared/types";
 
@@ -28,12 +27,11 @@ export interface ThreadListResponse {
   nextCursor?: string | null;
   backwardsCursor?: string | null;
   projects?: ProjectRecord[];
-  projectDirectoryAvailability?: Record<number, ProjectDirectoryAvailability>;
 }
 
 export interface ThreadViewState {
   hostId: number;
-  projectId: number | null;
+  cwd: string | null;
   threadId: string;
   currentThread: GatewayThread | null;
   history: ThreadTimelineHistoryState | null;
@@ -73,7 +71,7 @@ export interface TerminalSessionState extends TerminalSessionSnapshot {
 export interface GatewayErrorState {
   message: string;
   hostId: number | null;
-  projectId: number | null;
+  cwd: string | null;
   threadId: string | null;
   turnId: string | null;
   transient: boolean;

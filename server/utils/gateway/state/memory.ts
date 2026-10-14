@@ -21,7 +21,6 @@ export type StoredHostRecord = HostRecord;
 
 export interface ThreadMetadataRecord {
   hostId: number;
-  projectId: number | null;
   threadId: string;
   parentThreadId: string | null;
   agentNickname: string | null;
@@ -52,7 +51,6 @@ export interface SubAgentThreadRecord {
 export interface GatewayMemoryState {
   hosts: StoredHostRecord[];
   projects: ProjectRecord[];
-  configuredProjectIds: Set<number>;
   pinnedThreads: PinnedThreadRecord[];
   notifications: GatewayConfig["notifications"];
   threadMetadata: ThreadMetadataRecord[];
@@ -72,7 +70,6 @@ function createGatewayMemoryState(): GatewayMemoryState {
   return {
     hosts: [],
     projects: [],
-    configuredProjectIds: new Set(),
     pinnedThreads: [],
     notifications: normalizeNotificationSettings(),
     threadMetadata: [],
@@ -139,12 +136,6 @@ export function buildGatewayMemoryState(config: GatewayConfig): GatewayMemorySta
       proxyUrl: trimmedOrNull(host.proxyUrl),
       hasPassword: typeof host.password === "string" && host.password.length > 0,
     })),
-    projects: (config.projects ?? []).map((project) => ({
-      ...project,
-      name: project.name.trim(),
-      remotePath: project.remotePath.trim(),
-    })),
-    configuredProjectIds: new Set((config.projects ?? []).map((project) => project.id)),
     pinnedThreads: normalizePinnedThreads(config.pinnedThreads ?? []),
     notifications: normalizeNotificationSettings(config.notifications),
   };
@@ -153,7 +144,6 @@ export function buildGatewayMemoryState(config: GatewayConfig): GatewayMemorySta
 export function normalizePinnedThreads(threads: PinnedThreadRecord[]) {
   return threads.map((thread) => ({
     hostId: thread.hostId,
-    projectId: thread.projectId ?? null,
     threadId: thread.threadId.trim(),
     title: thread.title.trim(),
     subtitle: trimmedOrNull(thread.subtitle),

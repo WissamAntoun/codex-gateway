@@ -83,7 +83,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("project.defaults.read"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         provider: agentProviderIdSchema.optional(),
       })
       .strict(),
@@ -99,7 +99,6 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("thread.activate"),
         ...requestIdField,
         ...threadScopeFields,
-        projectId: positiveId.nullable().optional(),
         limit: positiveId.optional(),
       })
       .strict(),
@@ -161,7 +160,6 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("thread.start"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId.nullable().optional(),
         cwd: nullableString,
         provider: agentProviderIdSchema.optional(),
         model: nullableString,
@@ -175,7 +173,6 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("turn.start"),
         ...requestIdField,
         ...threadScopeFields,
-        projectId: positiveId,
         text: z.string(),
         clientUserMessageId: nullableString,
         cwd: nullableString,
@@ -205,7 +202,6 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("turn.steer"),
         ...requestIdField,
         ...threadScopeFields,
-        projectId: positiveId,
         expectedTurnId: nonEmptyString,
         text: z.string(),
         clientUserMessageId: nullableString,
@@ -307,7 +303,6 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("terminal.open"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId.nullable().optional(),
         threadId: nullableString,
         cwd: nullableString,
         title: nullableString,
@@ -336,7 +331,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("browser.open"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId.nullable().optional(),
+        cwd: nullableString,
         threadId: nullableString,
         panelId: nonEmptyString,
         targetUrl: nonEmptyString,
@@ -359,7 +354,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("file.search"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         query: z.string().max(500),
         cancellationToken: nonEmptyString,
       })
@@ -369,7 +364,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("file.watch.subscribe"),
         ...requestIdField,
         ...threadScopeFields,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         paths: z.array(nonEmptyString).min(1).max(256),
       })
       .strict(),
@@ -377,7 +372,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
       .object({
         type: z.literal("file.watch.unsubscribe"),
         ...threadScopeFields,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         subscriptionId: nonEmptyString,
       })
       .strict(),
@@ -386,7 +381,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("file.git.compare"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         path: nonEmptyString,
       })
       .strict(),
@@ -395,7 +390,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         type: z.literal("file.git.workspace.inspect"),
         ...requestIdField,
         hostId: positiveId,
-        projectId: positiveId,
+        cwd: nonEmptyString,
         rootPath: nonEmptyString,
       })
       .strict(),

@@ -27,7 +27,7 @@ export async function loadOlderTurns(t: Translate, options: { limit?: number } =
   }
 
   const hostId = navigation.selectedHostId;
-  const projectId = navigation.selectedProjectId;
+  const cwd = navigation.selectedCwd;
   const threadId = navigation.selectedThreadId;
   views.loadingOlderTurns = true;
   try {
@@ -63,7 +63,7 @@ export async function loadOlderTurns(t: Translate, options: { limit?: number } =
     }
     gateway.setError(
       messageFromError(error, t("app.loadOlderTurnsFailed"), errorMessageLabels(t)),
-      { hostId, projectId, threadId },
+      { hostId, cwd, threadId },
     );
   } finally {
     if (

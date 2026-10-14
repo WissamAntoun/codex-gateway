@@ -357,10 +357,8 @@ export type AppServerSubAgentSource = Extract<
   { subAgent: unknown }
 >["subAgent"];
 
-export const gatewayThreadSchema = appServerThreadSchema.omit({ projectId: true }).extend({
-  appServerProjectId: z.string().nullable(),
+export const gatewayThreadSchema = appServerThreadSchema.extend({
   hostId: z.number().int().positive(),
-  projectId: z.number().int().positive().nullable(),
   pinned: z.boolean(),
   title: z.string().nullable(),
 });

@@ -1,6 +1,5 @@
 import { posix } from "node:path";
 import type {
-  ProjectRecord,
   RemoteGitFileBaseline,
   RemoteGitFileComparison,
   RemoteGitFileStatus,
@@ -41,11 +40,11 @@ export class RemoteGitFileService {
 
   async compare(
     host: HostWithSecret,
-    project: ProjectRecord,
+    cwd: string,
     requestedPath: string,
   ): Promise<RemoteGitFileComparison> {
     const path = posix.normalize(requestedPath.trim());
-    const projectPath = posix.normalize(project.remotePath.trim());
+    const projectPath = posix.normalize(cwd.trim());
     if (!path.startsWith("/") || !projectPath.startsWith("/")) {
       return { availability: "outsideWorktree" };
     }
@@ -78,11 +77,11 @@ export class RemoteGitFileService {
 
   async inspectWorkspace(
     host: HostWithSecret,
-    project: ProjectRecord,
+    cwd: string,
     requestedRootPath: string,
   ): Promise<RemoteGitWorkspaceSnapshot> {
     const rootPath = posix.normalize(requestedRootPath.trim());
-    const projectPath = posix.normalize(project.remotePath.trim());
+    const projectPath = posix.normalize(cwd.trim());
     if (!rootPath.startsWith("/") || !projectPath.startsWith("/")) {
       return { availability: "outsideWorktree" };
     }

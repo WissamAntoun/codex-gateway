@@ -15,14 +15,15 @@ test("Bark sends ordinary turn notifications and only notifies when an app-serve
 
   // A user may enable Web Push for their account before authorizing this browser. With no
   // browser subscription, real turn completion must still reach the configured Bark device.
-  await page.getByRole("switch", { name: "启用网页通知" }).click();
-  await page.getByRole("button", { name: "保存通知设置" }).click();
-  await expect(page.getByText("通知设置已保存")).toBeVisible();
+  const webPush = page.getByRole("switch", { name: "启用网页通知" });
+  await webPush.click();
+  await expect(webPush).toBeChecked();
+  await expect(webPush).toBeEnabled();
 
   const { host, project } = await remoteWorkspace.provision({
     hostName: `bark-notification-host-${Date.now()}`,
   });
-  const threadId = await remoteWorkspace.startThread(project.id);
+  const threadId = await remoteWorkspace.startThread(project.remotePath);
 
   await sendTextTurn(page, `E2E 普通通知 ${Date.now()}`);
   // This case verifies ordinary completion notification, not tool selection. Waiting for a
@@ -77,7 +78,7 @@ test("Bark keeps monitoring an active main turn after the last browser closes", 
   const { project } = await remoteWorkspace.provision({
     hostName: `bark-handoff-host-${Date.now()}`,
   });
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
   await page
     .getByPlaceholder("输入后续修改要求")
     .fill(
@@ -109,7 +110,7 @@ test("plan-mode user questions render and notify through Sonner and Bark", async
 
   const hostName = `bark-plan-question-host-${Date.now()}`;
   const { project } = await remoteWorkspace.provision({ hostName });
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
   await page.getByPlaceholder("输入后续修改要求").fill("/");
   await page.getByTestId("slash-command-plan").click();
   await expect(page.getByTestId("composer-mode-strip").getByText("计划模式").first()).toBeVisible();
