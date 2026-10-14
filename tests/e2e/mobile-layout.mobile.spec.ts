@@ -88,7 +88,7 @@ test("uses the mobile layout with hidden sidebar, composer shell, and host manag
   await page.keyboard.press("Escape");
 });
 
-test("shows effort and compact context usage without mobile approval controls", async ({
+test("shows model, effort and context with an expandable mobile approval menu", async ({
   page,
 }) => {
   await openApp(page);
@@ -141,7 +141,14 @@ test("shows effort and compact context usage without mobile approval controls", 
   await expect(contextMeter).toHaveAttribute("aria-label", "上下文用量 50%");
   await expect(contextMeter.getByText("50%", { exact: true })).toBeHidden();
 
+  await page.getByTestId("approval-policy-trigger").click();
+  await expect(page.getByText("Codex 操作应该如何审批？", { exact: true })).toBeVisible();
+  await expect(
+    page.locator('[data-slot="popover-content"]').getByRole("button", { name: /完全访问/ }),
+  ).toBeVisible();
   await page.getByTestId("model-select").click();
+  await expect(page.getByText("Codex 操作应该如何审批？", { exact: true })).toBeHidden();
+
   const modelSearch = page.getByPlaceholder("搜索模型或推理强度");
   await expect(modelSearch).toBeVisible();
   await expect(modelSearch).not.toBeFocused();
