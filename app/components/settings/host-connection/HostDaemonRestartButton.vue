@@ -19,6 +19,7 @@ import { useGatewayCatalogStore } from "@/stores/gateway-catalog";
 import { useGatewayRealtimeStore } from "@/stores/gateway-realtime";
 import { expectHostDaemonRestarted } from "@/stores/gateway-realtime/response-parsers";
 import { gatewayErrorMessage } from "@/utils/gateway-error";
+import { hostConnectionIsBusy } from "@/components/sidebar/sidebar-utils";
 
 const props = defineProps<{ host: HostRecord }>();
 const { t } = useI18n();
@@ -42,14 +43,7 @@ const { isLoading, execute } = useAsyncState(
 );
 const busy = computed(() => {
   const status = catalog.hostConnectionStatuses[props.host.id]?.status;
-  return (
-    isLoading.value ||
-    status === "checkingVersion" ||
-    status === "upgrading" ||
-    status === "restarting" ||
-    status === "connecting" ||
-    status === "mfaConnecting"
-  );
+  return isLoading.value || hostConnectionIsBusy(status ?? "idle");
 });
 
 function confirmRestart() {
@@ -62,7 +56,7 @@ function confirmRestart() {
   <Button
     :data-testid="`host-daemon-restart-${host.id}`"
     variant="outline"
-    class="w-full"
+    size="sm"
     :disabled="busy"
     @click="confirming = true"
   >

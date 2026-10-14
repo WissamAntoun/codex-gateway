@@ -60,7 +60,6 @@ function logSuccessfulDelivery(userId: number, notification: ServerNotification)
     key: notification.key,
     targetKind: target.kind,
     hostId: target.hostId,
-    projectId: target.projectId,
     threadId: target.threadId,
     ...(target.kind === "tmuxMonitor" ? { monitorId: target.monitorId } : {}),
   });

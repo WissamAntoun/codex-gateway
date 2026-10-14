@@ -1,6 +1,5 @@
 import type { ComposerTurnOptions } from "~~/shared/types";
-import { INITIAL_TURN_PAGE_LIMIT } from "~~/shared/config";
-import { threadTurnsFromHistory } from "~~/shared/thread-history/shape";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import { useGatewayCatalogStore } from "@/stores/gateway-catalog";
 import { useGatewayBootstrapStore } from "@/stores/gateway-bootstrap";
 import { useGatewayComposerStore } from "@/stores/gateway-composer";
@@ -57,17 +56,14 @@ export function createThreadOpenActions() {
 
     async openThread(
       threadId: string,
-      context?: { hostId?: number; projectId?: number | null; replaceRoute?: boolean },
+      context?: { hostId?: number; cwd?: string | null; replaceRoute?: boolean },
     ) {
       const gateway = useGatewayCatalogStore();
       const navigation = useGatewayNavigationStore();
       const views = useGatewayThreadViewStore();
       cacheSelectedThreadView();
       const targetHostId = context?.hostId ?? navigation.selectedHostId;
-      const targetProjectId =
-        context && "projectId" in context
-          ? (context.projectId ?? null)
-          : navigation.selectedProjectId;
+      const targetCwd = context?.cwd ?? null;
       if (targetHostId === null || targetHostId === undefined) return;
       clearThreadCompletionAttention(targetHostId, threadId);
       if (
@@ -87,31 +83,24 @@ export function createThreadOpenActions() {
         gateway.models = [];
         gateway.modelsHostId = null;
       }
-      activatePendingThreadView(targetHostId, targetProjectId, threadId);
+      activatePendingThreadView(targetHostId, targetCwd, threadId);
       void gateway.ensureSelectedHostModels();
       if (restoreThreadView(targetHostId, threadId)) {
-        const cachedTurnLimit = Math.max(
-          INITIAL_TURN_PAGE_LIMIT,
-          threadTurnsFromHistory(views.history).length,
-        );
         finishThreadSelection(threadId, context?.replaceRoute);
         void refreshGoalAfterOpen(targetHostId, threadId);
         requestScrollToLatest();
         void syncOpenThreadFromServer({
           hostId: targetHostId,
-          projectId: targetProjectId,
           threadId,
           viewEpoch,
           replaceRoute: context?.replaceRoute,
           showLoading: false,
           scrollToLatest: false,
-          limit: cachedTurnLimit,
         });
         return;
       }
       await syncOpenThreadFromServer({
         hostId: targetHostId,
-        projectId: targetProjectId,
         threadId,
         viewEpoch,
         replaceRoute: context?.replaceRoute,
@@ -119,11 +108,7 @@ export function createThreadOpenActions() {
       });
     },
 
-    async openThreadPreview(
-      hostId: number,
-      threadId: string,
-      context: { projectId?: number | null; limit?: number } = {},
-    ) {
+    async openThreadPreview(hostId: number, threadId: string, context: { limit?: number } = {}) {
       const gateway = useGatewayBootstrapStore();
       const views = useGatewayThreadViewStore();
       const key = pinnedKey(hostId, threadId);
@@ -143,16 +128,15 @@ export function createThreadOpenActions() {
       }
       const loadToken = beginPreviewLoad(key);
       patchThreadView(hostId, threadId, {
-        ...(existing ?? { projectId: context.projectId ?? null }),
+        ...(existing ?? { cwd: null }),
         loading: true,
         error: null,
       });
       return coordinateThreadSnapshot({
         input: {
           hostId,
-          projectId: context.projectId ?? null,
           threadId,
-          limit: context.limit ?? INITIAL_TURN_PAGE_LIMIT,
+          limit: context.limit ?? INITIAL_TIMELINE_PAGE_LIMIT,
         },
         accept: () => previewLoadTokens.get(key) === loadToken,
         discard: () => {
@@ -168,7 +152,7 @@ export function createThreadOpenActions() {
         commit: (result) => {
           upsertThreadView({
             hostId,
-            projectId: result.projectId ?? context.projectId ?? null,
+            cwd: result.thread.cwd,
             threadId,
             currentThread: result.thread,
             history: result.history,
@@ -191,7 +175,7 @@ export function createThreadOpenActions() {
         fail: (error) => {
           if (previewLoadTokens.get(key) !== loadToken) return;
           patchThreadView(hostId, threadId, {
-            projectId: context.projectId ?? existing?.projectId ?? null,
+            cwd: existing?.cwd ?? null,
             loading: false,
             error: messageFromError(error, gateway.t("app.openThreadFailed"), gateway.errorLabels),
           });
@@ -210,12 +194,11 @@ export function createThreadOpenActions() {
       const navigation = useGatewayNavigationStore();
       const views = useGatewayThreadViewStore();
       const hostId = navigation.selectedHostId;
-      const projectId = navigation.selectedProjectId;
       const threadId = navigation.selectedThreadId;
       if (hostId === null || threadId === null || threadId === "") return;
       const viewEpoch = views.viewEpoch;
       await coordinateThreadSnapshot({
-        input: { hostId, projectId, threadId },
+        input: { hostId, threadId },
         setLoading:
           options.showLoading === true ? (loading) => (views.loading = loading) : undefined,
         accept: (result) =>
@@ -240,7 +223,7 @@ export function createThreadOpenActions() {
         fail: (error) =>
           gateway.setError(
             messageFromError(error, gateway.t("app.openThreadFailed"), gateway.errorLabels),
-            { hostId, projectId, threadId },
+            { hostId, threadId },
           ),
       });
     },
@@ -270,10 +253,9 @@ export function createThreadOpenActions() {
         return false;
       }
       navigation.selectedHostId = last.hostId;
-      navigation.selectedProjectId = last.projectId;
+      navigation.selectedCwd = null;
       await useGatewayThreadViewStore().openThread(last.threadId, {
         hostId: last.hostId,
-        projectId: last.projectId,
         replaceRoute: true,
       });
       syncSelectedRoute({ replace: true });
@@ -282,15 +264,14 @@ export function createThreadOpenActions() {
 
     async startThread(
       options: ComposerTurnOptions = {},
-      context?: { hostId?: number; projectId?: number | null },
+      context?: { hostId?: number; cwd?: string | null },
     ) {
       const navigation = useGatewayNavigationStore();
       cacheSelectedThreadView();
       const viewEpoch = beginViewTransition();
-      if (context?.hostId !== undefined)
-        activateThreadView(context.hostId, context.projectId ?? null);
-      else if (context && "projectId" in context) {
-        navigation.selectedProjectId = context.projectId ?? null;
+      if (context?.hostId !== undefined) activateThreadView(context.hostId, context.cwd ?? null);
+      else if (context && "cwd" in context) {
+        navigation.selectedCwd = context.cwd ?? null;
         clearCurrentThreadView();
       }
       if (navigation.selectedHostId === null) return;
@@ -332,7 +313,6 @@ async function recoverThreadSnapshot(hostId: number, threadId: string) {
   await coordinateThreadSnapshot({
     input: {
       hostId,
-      projectId: existing?.projectId ?? navigation.selectedProjectId,
       threadId,
     },
     accept: () => {
@@ -349,12 +329,12 @@ async function recoverThreadSnapshot(hostId: number, threadId: string) {
         // A gap is an explicit declaration that incremental state is incomplete. Replace it with
         // the authoritative snapshot even if its event id is lower after a server restart; the
         // ordinary refresh path intentionally rejects lower ids and is therefore not suitable here.
-        applyThreadSnapshotResult(threadId, result);
+        applyThreadSnapshotResult(threadId, result, true);
         cacheSelectedThreadView();
       } else {
         upsertThreadView({
           hostId,
-          projectId: result.projectId ?? retainedView?.projectId ?? null,
+          cwd: result.thread.cwd,
           threadId,
           currentThread: result.thread,
           history: result.history,
@@ -377,7 +357,7 @@ async function recoverThreadSnapshot(hostId: number, threadId: string) {
     fail: (error) =>
       gateway.setError(
         messageFromError(error, gateway.t("app.openThreadFailed"), gateway.errorLabels),
-        { hostId, threadId, projectId: existing?.projectId ?? null },
+        { hostId, threadId },
       ),
   });
 }
@@ -390,7 +370,6 @@ function beginPreviewLoad(key: string) {
 
 async function syncOpenThreadFromServer(input: {
   hostId: number;
-  projectId: number | null;
   threadId: string;
   viewEpoch: number;
   replaceRoute?: boolean;
@@ -419,7 +398,7 @@ async function syncOpenThreadFromServer(input: {
     fail: (error) =>
       gateway.setError(
         messageFromError(error, gateway.t("app.openThreadFailed"), gateway.errorLabels),
-        { hostId: input.hostId, projectId: input.projectId, threadId: input.threadId },
+        { hostId: input.hostId, threadId: input.threadId },
       ),
   });
 }
@@ -457,7 +436,7 @@ async function refreshGoalAfterOpen(hostId: number, threadId: string) {
     if (!sessionIsCurrent()) return;
     gateway.setError(
       messageFromError(error, gateway.t("app.refreshThreadGoalFailed"), gateway.errorLabels),
-      { hostId, threadId, projectId: navigation.selectedProjectId },
+      { hostId, threadId },
     );
   }
 }

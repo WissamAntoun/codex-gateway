@@ -12,7 +12,6 @@ import { threadSnapshotStore } from "./thread-snapshots";
 export const runtimeConfigStore = {
   replace(config: GatewayConfig) {
     hostStore.replaceHosts(config.hosts);
-    projectStore.replaceProjects(config.projects ?? []);
     const hostIds = hostStore.hostIds();
     projectStore.pruneToHosts(hostIds);
     threadMetadataStore.pruneToHosts(hostIds);
@@ -38,12 +37,11 @@ export const runtimeConfigStore = {
 
   export(): GatewayConfig {
     return {
-      version: 1,
+      version: 2,
       hosts: hostStore.listWithSecret().map((host) => ({
         ...host,
         hasPassword: Boolean(host.password),
       })),
-      projects: projectStore.listConfigured(),
       pinnedThreads: currentGatewayMemoryState().pinnedThreads,
       notifications: normalizeNotificationSettings(currentGatewayMemoryState().notifications),
     };

@@ -19,7 +19,7 @@ export function createGatewayThreadTurnActions() {
     loadCommandOutputWindow: (input: CommandOutputWindowRequest) =>
       loadCommandOutputWindow(t, input),
     interruptActiveTurn: () => interruptActiveTurn(t),
-    interruptThreadTurn: (input: { hostId: number; threadId: string; projectId?: number | null }) =>
+    interruptThreadTurn: (input: { hostId: number; threadId: string }) =>
       interruptThreadTurn(t, input),
     respondToServerRequest,
     maybeQueueServerOverloadedRetry: (

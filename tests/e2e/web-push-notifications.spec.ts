@@ -51,7 +51,7 @@ test("browser notifications survive reload, take priority over Bark, and can be 
   await configureBarkNotifications(page, bark.url, bark.deviceKey);
   await page.keyboard.press("Escape");
   const { project } = await remoteWorkspace.provision();
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
   await openApp(pushPage, { resetConfig: false, interceptRealtime: false });
   await pushPage.getByTestId("settings-toggle").click();
   await pushPage.getByRole("tab", { name: "通知" }).click();
@@ -72,15 +72,25 @@ test("browser notifications survive reload, take priority over Bark, and can be 
       `${await pushPage.locator('[data-sonner-toast][data-type="error"]').innerText()} (push service: ${service})`,
     );
   }
-  const [saved] = await Promise.all([
-    pushPage.waitForResponse(
-      (response) =>
-        response.url().endsWith("/api/config/notifications") &&
-        response.request().method() === "POST",
-    ),
-    pushPage.getByRole("button", { name: "保存通知设置", exact: true }).click(),
-  ]);
-  expect(saved.ok()).toBe(true);
+  // Authorizing this browser is complete without a second Save action. Exercise the actual
+  // reported sequence: close settings immediately, reopen, then reload the browser.
+  const enabled = pushPage.getByRole("switch", { name: "启用网页通知" });
+  await expect(enabled).toBeChecked();
+  await expect(enabled).toBeEnabled();
+  await pushPage.keyboard.press("Escape");
+  await pushPage.getByTestId("settings-toggle").click();
+  await pushPage.getByRole("tab", { name: "通知" }).click();
+  await expect(enabled).toBeChecked();
+  await enabled.click();
+  await expect(enabled).not.toBeChecked();
+  await expect(enabled).toBeEnabled();
+  await pushPage.keyboard.press("Escape");
+  await pushPage.getByTestId("settings-toggle").click();
+  await pushPage.getByRole("tab", { name: "通知" }).click();
+  await expect(enabled).not.toBeChecked();
+  await enabled.click();
+  await expect(enabled).toBeChecked();
+  await expect(enabled).toBeEnabled();
   await reloadApp(pushPage);
   await pushPage.getByTestId("settings-toggle").click();
   await pushPage.getByRole("tab", { name: "通知" }).click();

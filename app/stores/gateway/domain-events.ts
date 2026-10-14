@@ -114,7 +114,7 @@ export type GatewayDomainEventMap = {
   };
   "file-watch-closed": {
     hostId: number;
-    projectId: number;
+    cwd: string;
     threadId: string;
   };
   "thread-settings-detected": {

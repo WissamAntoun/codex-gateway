@@ -1,58 +1,19 @@
-import type { ProjectCreateInput, ProjectRecord, ProjectUpdateInput } from "~~/shared/types";
-import { currentGatewayMemoryState, nextId, nowIso } from "./memory";
+import type { ProjectCreateInput, ProjectRecord } from "~~/shared/types";
+import { currentGatewayMemoryState, nowIso } from "./memory";
 
-function normalizeProject(
-  input: ProjectCreateInput,
-  id = nextId(currentGatewayMemoryState().projects),
-) {
-  const timestamp = nowIso();
-  const existing = currentGatewayMemoryState().projects.find((project) => project.id === id);
-  return {
-    id,
-    hostId: input.hostId,
-    name: input.name.trim(),
-    remotePath: input.remotePath.trim(),
-    createdAt: existing?.createdAt ?? timestamp,
-    updatedAt: timestamp,
-  };
-}
-
+// Directory groups are navigation state, not a second persistent project catalog. Codex owns
+// thread cwd; pins identify threads independently, so neither needs a Gateway-generated ID.
 export const projectStore = {
-  replaceProjects(projects: ProjectRecord[]) {
-    currentGatewayMemoryState().projects = projects.map((project) => ({
-      ...project,
-      name: project.name.trim(),
-      remotePath: project.remotePath.trim(),
-    }));
-    currentGatewayMemoryState().configuredProjectIds = new Set(
-      projects.map((project) => project.id),
-    );
-  },
-
   pruneToHosts(hostIds: Set<number>) {
-    currentGatewayMemoryState().projects = currentGatewayMemoryState().projects.filter((project) =>
+    currentGatewayMemoryState().projects = this.list().filter((project) =>
       hostIds.has(project.hostId),
     );
-    pruneConfiguredProjectIds();
   },
 
   deleteForHost(hostId: number) {
-    currentGatewayMemoryState().projects = currentGatewayMemoryState().projects.filter(
+    currentGatewayMemoryState().projects = this.list().filter(
       (project) => project.hostId !== hostId,
     );
-    pruneConfiguredProjectIds();
-  },
-
-  delete(id: number) {
-    const existing = this.get(id);
-    if (existing === null) {
-      return null;
-    }
-    currentGatewayMemoryState().projects = currentGatewayMemoryState().projects.filter(
-      (project) => project.id !== id,
-    );
-    currentGatewayMemoryState().configuredProjectIds.delete(id);
-    return existing;
   },
 
   list(hostId?: number): ProjectRecord[] {
@@ -61,84 +22,46 @@ export const projectStore = {
       .sort((left, right) => left.name.localeCompare(right.name));
   },
 
-  listConfigured(): ProjectRecord[] {
-    // Discovery groups normally remain transient. Once pinned, their IDs are persisted in the
-    // pin, so persist the referenced project too; otherwise another path can reuse that ID on
-    // restart. This belongs to config export, not the browser's cache or every discovery scan.
-    const pinned = currentGatewayMemoryState().pinnedThreads;
-    return this.list().filter(
-      (project) =>
-        currentGatewayMemoryState().configuredProjectIds.has(project.id) ||
-        pinned.some(
-          (thread) => thread.hostId === project.hostId && thread.projectId === project.id,
-        ),
-    );
-  },
-
-  get(id: number): ProjectRecord | null {
-    return currentGatewayMemoryState().projects.find((project) => project.id === id) ?? null;
+  get(hostId: number, cwd: string): ProjectRecord | null {
+    return this.list(hostId).find((project) => project.remotePath === cwd.trim()) ?? null;
   },
 
   create(input: ProjectCreateInput): ProjectRecord {
-    const project = upsertProject(input);
-    currentGatewayMemoryState().configuredProjectIds.add(project.id);
-    return project;
-  },
-
-  update(id: number, input: ProjectUpdateInput): ProjectRecord | null {
-    const existing = this.get(id);
-    if (existing === null) {
-      return null;
-    }
-    const project = normalizeProject(input, id);
-    currentGatewayMemoryState().projects = currentGatewayMemoryState().projects.map((item) =>
-      item.id === id ? project : item,
-    );
-    currentGatewayMemoryState().configuredProjectIds.add(id);
+    const existing = this.get(input.hostId, input.remotePath);
+    const timestamp = nowIso();
+    const project = {
+      hostId: input.hostId,
+      name: input.name.trim(),
+      remotePath: input.remotePath.trim(),
+      createdAt: existing?.createdAt ?? timestamp,
+      updatedAt: timestamp,
+    };
+    currentGatewayMemoryState().projects = [
+      ...this.list().filter(
+        (item) => item.hostId !== project.hostId || item.remotePath !== project.remotePath,
+      ),
+      project,
+    ];
     return project;
   },
 
   ensureForPath(hostId: number, remotePath: string): ProjectRecord {
-    const normalizedPath = remotePath.trim();
-    const existing = currentGatewayMemoryState().projects.find(
-      (project) => project.hostId === hostId && project.remotePath === normalizedPath,
+    const cwd = remotePath.trim();
+    return (
+      this.get(hostId, cwd) ??
+      this.create({
+        hostId,
+        remotePath: cwd,
+        name:
+          cwd
+            .split("/")
+            .filter((part) => part !== "")
+            .at(-1) ?? "root",
+      })
     );
-    if (existing !== undefined) {
-      return existing;
-    }
-    const name =
-      normalizedPath
-        .split("/")
-        .filter((part) => part !== "")
-        .at(-1) ?? (normalizedPath === "" ? "root" : normalizedPath);
-    // Thread discovery needs a runtime grouping record, not a persisted user project.
-    return upsertProject({ hostId, name, remotePath: normalizedPath });
   },
 
   count() {
     return currentGatewayMemoryState().projects.length;
   },
 };
-
-function upsertProject(input: ProjectCreateInput): ProjectRecord {
-  const remotePath = input.remotePath.trim();
-  const existing = currentGatewayMemoryState().projects.find(
-    (project) => project.hostId === input.hostId && project.remotePath === remotePath,
-  );
-  const project = normalizeProject(input, existing?.id);
-  if (existing !== undefined) {
-    currentGatewayMemoryState().projects = currentGatewayMemoryState().projects.map((item) =>
-      item.id === existing.id ? project : item,
-    );
-  } else {
-    currentGatewayMemoryState().projects.push(project);
-  }
-  return project;
-}
-
-function pruneConfiguredProjectIds() {
-  const retainedIds = new Set(currentGatewayMemoryState().projects.map((project) => project.id));
-  currentGatewayMemoryState().configuredProjectIds = new Set(
-    [...currentGatewayMemoryState().configuredProjectIds].filter((id) => retainedIds.has(id)),
-  );
-}

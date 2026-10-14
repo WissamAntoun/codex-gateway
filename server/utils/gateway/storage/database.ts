@@ -123,7 +123,6 @@ function migrate(db: DatabaseSync) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       host_id INTEGER NOT NULL,
-      project_id INTEGER,
       thread_id TEXT,
       thread_title TEXT,
       session_name TEXT NOT NULL,
@@ -158,4 +157,10 @@ function migrate(db: DatabaseSync) {
       ON tmux_monitors(user_id, host_id, session_name, window_index, pane_index)
       WHERE status = 'active';
   `);
+  // The directory catalog is no longer durable Gateway state. Existing monitors keep their
+  // host/thread binding; only the obsolete local project reference is removed on startup.
+  const monitorColumns = db.prepare("PRAGMA table_info(tmux_monitors)").all();
+  if (monitorColumns.some((column) => column.name === "project_id")) {
+    db.exec("ALTER TABLE tmux_monitors DROP COLUMN project_id");
+  }
 }

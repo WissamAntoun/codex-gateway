@@ -22,7 +22,7 @@ test("uploads a ZIP from the attachment picker to the remote host", async ({
 }) => {
   await openApp(page, { interceptRealtime: false });
   const { project } = await remoteWorkspace.provision();
-  await remoteWorkspace.startThread(project.id);
+  await remoteWorkspace.startThread(project.remotePath);
 
   // A real ZIP containing a short text file; use the browser picker and real SFTP transport.
   const zip = Buffer.from(

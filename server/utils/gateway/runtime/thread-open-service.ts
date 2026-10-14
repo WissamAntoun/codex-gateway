@@ -1,7 +1,6 @@
 import type { AppServerThread, HostRecord } from "~~/shared/types";
 import type { AppServerTimelinePage } from "~~/shared/runtime/app-server";
-import { INITIAL_TURN_PAGE_LIMIT } from "~~/shared/config";
-import { threadTurnsFromHistory } from "~~/shared/thread-history/shape";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import { projectThreadTimelineHistory } from "~~/shared/thread-history/timeline";
 import {
   runtimeStatusFromSnapshotState,
@@ -24,6 +23,7 @@ import { gatewayThreadFromAppServer } from "../protocol/gateway-thread";
 import type { ThreadHistoryReader } from "./thread-history-reader";
 import { installRecoveredTurnTail } from "./thread-tail-recovery";
 import { timelinePageToTurns } from "~~/shared/thread-history/app-server-timeline";
+import { threadActivationHistory } from "../protocol/thread-activation-history";
 
 export class ThreadOpenService {
   private readonly pendingRefreshes = new Map<
@@ -39,45 +39,30 @@ export class ThreadOpenService {
   async openThread(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
-    limit = INITIAL_TURN_PAGE_LIMIT,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
     activationController?: ThreadController,
   ) {
     const cachedSnapshot = threadSnapshotStore.get(host.id, threadId);
     if (cachedSnapshot) {
-      if (snapshotSatisfiesTurnLimit(cachedSnapshot, limit)) {
-        if (
-          activationController !== undefined &&
-          !activationController.isSubscribed() &&
-          this.isThreadRunning(host.id, threadId)
-        ) {
-          runtimeLog("thread cache continuity refresh", {
-            hostId: host.id,
-            threadId,
-            projectId,
-          });
-          return this.refreshThreadState(
-            host,
-            threadId,
-            projectId,
-            limit,
-            activationController,
-            true,
-          );
-        }
-        // Runtime notifications are projected into this snapshot as they arrive, including the
-        // active Turn's cumulative output and status. Re-reading a running thread here would make
-        // every browser activation call repeat the timeline scan. Only an absent or too-shallow
-        // cache requires remote history I/O; reconnect gaps use the authoritative refresh path.
-        return this.snapshotResult(host, threadId, projectId, cachedSnapshot);
+      if (
+        activationController !== undefined &&
+        !activationController.isSubscribed() &&
+        this.isThreadRunning(host.id, threadId)
+      ) {
+        runtimeLog("thread cache continuity refresh", {
+          hostId: host.id,
+          threadId,
+        });
+        return this.refreshThreadState(host, threadId, limit, activationController, true);
       }
-      runtimeLog("thread cache depth refresh", {
-        hostId: host.id,
-        threadId,
-        cachedTurns: threadTurnsFromHistory(cachedSnapshot.history).length,
-        requestedTurns: limit,
-      });
-      return this.refreshThreadState(host, threadId, projectId, limit, activationController);
+      // Runtime notifications are projected into this snapshot as they arrive, including the
+      // active Turn's cumulative output and status. Re-reading a running thread here would make
+      // every browser activation call repeat the timeline scan. Only an absent cache requires
+      // initial history I/O; reconnect gaps use the authoritative refresh path.
+      // A timeline page can consist entirely of one running Turn. Cache validity is maintained
+      // by the subscription/recovery lifecycle, never by comparing a Turn count with an entry
+      // limit. Historical expansion uses its official cursor instead of reopening the thread.
+      return this.snapshotResult(host, threadId, cachedSnapshot, limit);
     }
 
     runtimeLog("thread cache miss", {
@@ -85,14 +70,14 @@ export class ThreadOpenService {
       threadId,
       limit,
     });
-    return this.refreshThreadState(host, threadId, projectId, limit, activationController);
+    return this.refreshThreadState(host, threadId, limit, activationController);
   }
 
-  startedThreadResult(host: HostRecord, projectId: number | null, rawResult: unknown) {
+  startedThreadResult(host: HostRecord, rawResult: unknown) {
     const parsed = parseThreadStartResult(rawResult);
     const thread: AppServerThread = parsed.thread;
     const threadId = String(thread.id);
-    threadMetadataStore.record(host.id, projectId, thread);
+    threadMetadataStore.record(host.id, thread);
     const recentEvents = gatewayEventStore.list(host.id, threadId, 0, 200);
     const history = projectThreadTimelineHistory({
       thread: { id: thread.id, turns: thread.turns },
@@ -101,7 +86,6 @@ export class ThreadOpenService {
     const snapshot = {
       thread,
       history,
-      projectId,
       oldestTimelineCursor,
       threadSettings: extractThreadSettings(parsed.raw),
       tokenUsage: latestTokenUsageFromEvents(recentEvents),
@@ -112,14 +96,13 @@ export class ThreadOpenService {
       snapshot,
       result: {
         hostId: host.id,
-        thread: gatewayThreadFromAppServer(host.id, projectId, thread),
+        thread: gatewayThreadFromAppServer(host.id, thread),
         history,
         lastEventId: gatewayEventStore.latestId(host.id, threadId),
         runtimeStatus: runtimeStatusFromThreadState(thread, history, recentEvents) ?? "running",
         threadSettings: snapshot.threadSettings,
         tokenUsage: snapshot.tokenUsage,
-        projectId,
-        project: projectId === null ? null : projectStore.get(projectId),
+        project: projectStore.ensureForPath(host.id, thread.cwd),
         oldestTimelineCursor: null,
         recentEvents: snapshotRecentEvents(host.id, threadId),
       },
@@ -138,8 +121,7 @@ export class ThreadOpenService {
   async refreshThreadState(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
-    limit = INITIAL_TURN_PAGE_LIMIT,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
     activationController?: ThreadController,
     recoverLatestTail = false,
   ): Promise<ReturnTypeResult> {
@@ -157,7 +139,6 @@ export class ThreadOpenService {
       return this.refreshThreadState(
         host,
         threadId,
-        projectId,
         limit,
         activationController,
         recoverLatestTail,
@@ -167,7 +148,6 @@ export class ThreadOpenService {
     const promise = this.performThreadStateRefresh(
       host,
       threadId,
-      projectId,
       limit,
       activationController,
       recoverLatestTail,
@@ -190,7 +170,7 @@ export class ThreadOpenService {
       120_000,
       parseThreadReadResult,
     );
-    threadMetadataStore.record(host.id, null, result.thread);
+    threadMetadataStore.record(host.id, result.thread);
     const cachedSnapshot = threadSnapshotStore.get(host.id, threadId);
     if (cachedSnapshot !== null) {
       const snapshot = { ...cachedSnapshot, thread: result.thread };
@@ -208,19 +188,12 @@ export class ThreadOpenService {
   private async performThreadStateRefresh(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
     limit: number,
     activationController?: ThreadController,
     recoverLatestTail = false,
   ) {
-    const loaded = await this.loadRemoteOpenSnapshot(
-      host,
-      threadId,
-      projectId,
-      activationController,
-    );
+    const loaded = await this.loadRemoteOpenSnapshot(host, threadId, activationController, limit);
     let { snapshot } = loaded;
-    const { resolvedProjectId } = loaded;
     if (recoverLatestTail) {
       const latestTurn = snapshot.history.thread.turns.at(-1);
       const latestTurnId = latestTurn?.id === undefined ? "" : String(latestTurn.id);
@@ -242,11 +215,10 @@ export class ThreadOpenService {
     threadRuntimeEvents.record(host.id, threadId, { type: "thread.status.changed", status });
     const recentEvents = gatewayEventStore.list(host.id, threadId, 0, 200);
     return {
-      thread: gatewayThreadFromAppServer(host.id, resolvedProjectId, snapshot.thread),
-      history: snapshot.history,
+      thread: gatewayThreadFromAppServer(host.id, snapshot.thread),
+      history: threadActivationHistory(snapshot.history, limit),
       runtimeStatus: runtimeStatusFromThreadState(snapshot.thread, snapshot.history, recentEvents),
-      projectId: resolvedProjectId,
-      project: resolvedProjectId === null ? null : projectStore.get(resolvedProjectId),
+      project: projectStore.ensureForPath(host.id, snapshot.thread.cwd),
       oldestTimelineCursor: snapshot.oldestTimelineCursor,
       threadSettings: snapshot.threadSettings,
       tokenUsage: latestTokenUsageFromEvents(recentEvents) ?? snapshot.tokenUsage,
@@ -257,29 +229,21 @@ export class ThreadOpenService {
   private snapshotResult(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
     snapshot: ThreadOpenSnapshot,
+    limit: number,
   ) {
     const recentEvents = gatewayEventStore.list(host.id, threadId, 0, 200);
-    // A project ID is a Gateway grouping hint, never the working directory of an existing Codex
-    // thread. Discovery IDs can be reassigned after a restart; resolve from upstream cwd even on
-    // warm cache hits so a stale pin cannot select another host's project or change turn/start cwd.
-    const resolvedProjectId = resolveProjectId(host.id, snapshot.thread.cwd);
-    if (snapshot.projectId !== resolvedProjectId) {
-      threadSnapshotStore.set(host.id, threadId, { ...snapshot, projectId: resolvedProjectId });
-    }
+    // Thread identity and cwd come directly from Codex. No browser grouping hint can redirect an
+    // existing conversation, and a cache hit needs no project-ID repair after a Gateway restart.
     runtimeLog("thread cache hit", {
       hostId: host.id,
       threadId,
-      projectId: resolvedProjectId,
-      requestedProjectId: projectId,
     });
     return {
-      thread: gatewayThreadFromAppServer(host.id, resolvedProjectId, snapshot.thread),
-      history: snapshot.history,
+      thread: gatewayThreadFromAppServer(host.id, snapshot.thread),
+      history: threadActivationHistory(snapshot.history, limit),
       runtimeStatus: runtimeStatusFromThreadState(snapshot.thread, snapshot.history, recentEvents),
-      projectId: resolvedProjectId,
-      project: resolvedProjectId === null ? null : projectStore.get(resolvedProjectId),
+      project: projectStore.ensureForPath(host.id, snapshot.thread.cwd),
       oldestTimelineCursor: snapshot.oldestTimelineCursor,
       threadSettings: snapshot.threadSettings,
       tokenUsage: latestTokenUsageFromEvents(recentEvents) ?? snapshot.tokenUsage,
@@ -290,15 +254,18 @@ export class ThreadOpenService {
   private async loadRemoteOpenSnapshot(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
     activationController?: ThreadController,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
   ) {
     if (activationController !== undefined) {
       const resumed = await activationController.resumeForHistory();
-      const timelinePage = await this.historyReader.loadInitialTimelinePage(host, resumed.thread);
+      const timelinePage = await this.historyReader.loadInitialTimelinePage(
+        host,
+        resumed.thread,
+        limit,
+      );
       return this.storeRemoteOpenSnapshot(
         host,
-        projectId,
         resumed.thread,
         timelinePage,
         extractThreadSettings(resumed),
@@ -316,10 +283,9 @@ export class ThreadOpenService {
       120_000,
       parseThreadReadResult,
     );
-    const timelinePage = await this.historyReader.loadInitialTimelinePage(host, read.thread);
+    const timelinePage = await this.historyReader.loadInitialTimelinePage(host, read.thread, limit);
     return this.storeRemoteOpenSnapshot(
       host,
-      projectId,
       read.thread,
       timelinePage,
       extractThreadSettings(read.thread),
@@ -328,24 +294,14 @@ export class ThreadOpenService {
 
   private storeRemoteOpenSnapshot(
     host: HostRecord,
-    projectId: number | null,
     thread: AppServerThread,
     timelinePage: AppServerTimelinePage,
     threadSettings: ReturnType<typeof extractThreadSettings> | null,
     activationController?: ThreadController,
   ) {
     const threadId = thread.id;
-    const resolvedProjectId = resolveProjectId(host.id, thread.cwd);
-    if (projectId !== null && projectId !== resolvedProjectId) {
-      runtimeLog("resolved thread project from app-server cwd", {
-        hostId: host.id,
-        threadId,
-        requestedProjectId: projectId,
-        projectId: resolvedProjectId,
-        cwd: thread.cwd,
-      });
-    }
-    threadMetadataStore.record(host.id, resolvedProjectId, thread);
+    projectStore.ensureForPath(host.id, thread.cwd);
+    threadMetadataStore.record(host.id, thread);
     const previousSnapshot = threadSnapshotStore.get(host.id, threadId);
     // The per-thread store retains at most 500 events. Reapply the complete retained window so a
     // summary refresh cannot erase an accepted steer merely because it is older than the first
@@ -357,7 +313,6 @@ export class ThreadOpenService {
         thread: { id: thread.id, turns: timelinePageToTurns(timelinePage) },
       }),
       oldestTimelineCursor: timelinePage.nextCursor,
-      projectId: resolvedProjectId,
       // For browser activation this value comes directly from thread/resume, including its
       // top-level collaborationMode. Do not replace it with a historical settings event: the
       // response is the protocol's persisted thread configuration.
@@ -375,22 +330,11 @@ export class ThreadOpenService {
     // and writes the same canonical snapshot directly.
     if (activationController === undefined) threadSnapshotStore.set(host.id, threadId, snapshot);
     else activationController.setOpenSnapshot(snapshot);
-    return { snapshot, resolvedProjectId };
+    return { snapshot };
   }
 }
 
 type ReturnTypeResult = Awaited<ReturnType<ThreadOpenService["performThreadStateRefresh"]>>;
-
-function snapshotSatisfiesTurnLimit(snapshot: ThreadOpenSnapshot, limit: number) {
-  // A cache wider than the caller's first-page preference is still a valid hit. Truncating it
-  // would require a different app-server cursor at the new oldest row, and cursors are deliberately
-  // opaque; refreshing merely to shrink a valid cache would add SSH/RPC latency. New pages start at
-  // INITIAL_TURN_PAGE_LIMIT, while same-page Pinia views ask for the depth they already retained.
-  return (
-    threadTurnsFromHistory(snapshot.history).length >= limit ||
-    snapshot.oldestTimelineCursor === null
-  );
-}
 
 function refreshKey(hostId: number, threadId: string) {
   const userId = currentGatewayUserId();
@@ -398,10 +342,6 @@ function refreshKey(hostId: number, threadId: string) {
     throw new Error("Thread refresh requires an authenticated user scope");
   }
   return `${userId}:${hostId}:${threadId}`;
-}
-
-function resolveProjectId(hostId: number, cwd: string) {
-  return cwd.trim() === "" ? null : projectStore.ensureForPath(hostId, cwd).id;
 }
 
 function snapshotRecentEvents(hostId: number, threadId: string) {

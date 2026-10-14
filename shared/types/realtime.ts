@@ -60,7 +60,7 @@ export type RealtimeClientMessage =
       type: "project.defaults.read";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       provider?: AgentProviderId;
     }
   | {
@@ -81,7 +81,6 @@ export type RealtimeClientMessage =
       type: "thread.activate";
       requestId: string;
       hostId: number;
-      projectId?: number | null;
       threadId: string;
       limit?: number;
     }
@@ -140,7 +139,6 @@ export type RealtimeClientMessage =
       type: "thread.start";
       requestId: string;
       hostId: number;
-      projectId?: number | null;
       cwd?: string | null;
       provider?: AgentProviderId;
       model?: string | null;
@@ -153,7 +151,6 @@ export type RealtimeClientMessage =
       requestId: string;
       hostId: number;
       threadId: string;
-      projectId: number;
       text: string;
       clientUserMessageId?: string | null;
       cwd?: string | null;
@@ -171,7 +168,6 @@ export type RealtimeClientMessage =
       requestId: string;
       hostId: number;
       threadId: string;
-      projectId: number;
       expectedTurnId: string;
       text: string;
       clientUserMessageId?: string | null;
@@ -289,7 +285,7 @@ export type RealtimeClientMessage =
       type: "file.search";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       query: string;
       cancellationToken: string;
     }
@@ -297,14 +293,14 @@ export type RealtimeClientMessage =
       type: "file.watch.subscribe";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       threadId: string;
       paths: string[];
     }
   | {
       type: "file.watch.unsubscribe";
       hostId: number;
-      projectId: number;
+      cwd: string;
       threadId: string;
       subscriptionId: string;
     }
@@ -312,14 +308,14 @@ export type RealtimeClientMessage =
       type: "file.git.compare";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       path: string;
     }
   | {
       type: "file.git.workspace.inspect";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       rootPath: string;
     }
   | {
@@ -388,7 +384,7 @@ export type RealtimeServerMessage =
       type: "project.defaults.snapshot";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       defaults: AgentProjectDefaults;
     }
   | {
@@ -595,14 +591,14 @@ export type RealtimeServerMessage =
       type: "file.search.results";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       result: ProjectFileSearchResult;
     }
   | {
       type: "file.watch.ready";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       threadId: string;
       rootPath: string;
       paths: string[];
@@ -610,7 +606,7 @@ export type RealtimeServerMessage =
   | {
       type: "file.watch.changed";
       hostId: number;
-      projectId: number;
+      cwd: string;
       threadId: string;
       rootPath: string;
       paths: string[];
@@ -618,14 +614,14 @@ export type RealtimeServerMessage =
   | {
       type: "file.watch.closed";
       hostId: number;
-      projectId: number;
+      cwd: string;
       threadId: string;
     }
   | {
       type: "file.git.comparison";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       path: string;
       comparison: RemoteGitFileComparison;
     }
@@ -633,7 +629,7 @@ export type RealtimeServerMessage =
       type: "file.git.workspace.snapshot";
       requestId: string;
       hostId: number;
-      projectId: number;
+      cwd: string;
       rootPath: string;
       snapshot: RemoteGitWorkspaceSnapshot;
     }

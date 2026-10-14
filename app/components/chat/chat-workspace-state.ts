@@ -25,7 +25,7 @@ export function useChatWorkspaceState() {
     scopedVisibleError({
       error: bootstrapRefs.error.value,
       selectedHostId: navigationRefs.selectedHostId.value,
-      selectedProjectId: navigationRefs.selectedProjectId.value,
+      selectedCwd: navigationRefs.selectedCwd.value,
       selectedThreadId: navigationRefs.selectedThreadId.value,
     }),
   );
@@ -68,17 +68,17 @@ function scopedVisibleError(input: {
   error: {
     message: string;
     hostId: number | null;
-    projectId: number | null;
+    cwd: string | null;
     threadId: string | null;
   } | null;
   selectedHostId: number | null;
-  selectedProjectId: number | null;
+  selectedCwd: string | null;
   selectedThreadId: string | null;
 }) {
   const current = input.error;
   if (!current) return null;
   if (current.hostId !== null && current.hostId !== input.selectedHostId) return null;
-  if (current.projectId !== null && current.projectId !== input.selectedProjectId) return null;
+  if (current.cwd !== null && current.cwd !== input.selectedCwd) return null;
   if (current.threadId !== null && current.threadId !== input.selectedThreadId) return null;
   return current.message;
 }

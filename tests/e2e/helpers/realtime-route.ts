@@ -22,7 +22,7 @@ export interface MockThreadSnapshotInput {
     {
       thread?: GatewayThreadFixture;
       history?: ThreadHistoryState;
-      projectId?: number | null;
+      cwd?: string | null;
       project?: ProjectRecord | null;
       threadSettings?: ThreadSettingsState;
       tokenUsage?: ThreadTokenUsageState | null;
@@ -272,7 +272,7 @@ function handleThreadActivate(
   const respond = () => {
     const thread = gatewayThreadFixture(snapshot.thread ?? { id: message.threadId }, {
       hostId: message.hostId ?? input.hostId ?? 1,
-      projectId: snapshot.projectId ?? null,
+      cwd: snapshot.cwd ?? null,
     });
     send(connection, {
       type: "thread.snapshot",
@@ -284,7 +284,6 @@ function handleThreadActivate(
         snapshot.history ?? { thread: { id: message.threadId, turns: [] } },
       ),
       runtimeStatus: snapshot.runtimeStatus ?? null,
-      projectId: snapshot.projectId ?? null,
       project: snapshot.project ?? null,
       threadSettings: snapshot.threadSettings ?? {},
       tokenUsage: snapshot.tokenUsage ?? null,

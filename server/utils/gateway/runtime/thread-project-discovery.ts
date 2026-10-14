@@ -16,8 +16,8 @@ export class ThreadProjectDiscoveryService {
       const thread = appServerThreadFromUnknown(value);
       if (thread === null || typeof thread.cwd !== "string" || thread.cwd.trim() === "") continue;
       try {
-        const project = projectStore.ensureForPath(hostId, thread.cwd);
-        threadMetadataStore.record(hostId, project.id, thread);
+        projectStore.ensureForPath(hostId, thread.cwd);
+        threadMetadataStore.record(hostId, thread);
       } catch (error) {
         gatewayLog("warn", "gateway", "failed to index thread project", {
           hostId,

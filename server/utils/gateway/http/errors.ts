@@ -7,7 +7,6 @@ import {
 } from "~~/shared/gateway-errors";
 import { userStore } from "../auth/users";
 import { hostRuntimeSupervisor } from "../runtime/host-runtime-supervisor";
-import { projectStore } from "../state/projects";
 import {
   buildGatewayMemoryState,
   currentGatewayMemoryState,
@@ -100,12 +99,11 @@ export function saveCurrentUserConfig(event: H3Event) {
 export function runtimeConfigFromMemory(): GatewayConfig {
   const state = currentGatewayMemoryState();
   return {
-    version: 1,
+    version: 2,
     hosts: state.hosts.map((host) => ({
       ...host,
       hasPassword: Boolean(host.password),
     })),
-    projects: projectStore.listConfigured(),
     pinnedThreads: state.pinnedThreads,
     notifications: normalizeNotificationSettings(state.notifications),
   };

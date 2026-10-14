@@ -19,7 +19,6 @@ interface TerminalSession {
   sessionId: string;
   userId: number;
   hostId: number;
-  projectId: number | null;
   threadId: string | null;
   cwd: string | null;
   title: string;
@@ -50,7 +49,6 @@ export class TerminalManager {
       sessionId,
       userId,
       hostId: host.id,
-      projectId: target.projectId ?? null,
       threadId: trimmedOrNull(target.threadId),
       cwd: trimmedOrNull(target.cwd),
       title: trimmedOrFallback(target.title, titleForScope(target.scope, host)),
@@ -186,7 +184,6 @@ export class TerminalManager {
     return {
       sessionId: session.sessionId,
       hostId: session.hostId,
-      projectId: session.projectId,
       threadId: session.threadId,
       cwd: session.cwd,
       title: session.title,

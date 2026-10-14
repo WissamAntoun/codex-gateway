@@ -42,7 +42,10 @@ export function registerGatewayLifecycleSubscribers() {
   gatewayDomainEvents.on("gateway-config-applied", ({ config }) => {
     const catalog = useGatewayCatalogStore();
     catalog.hosts = [...config.hosts];
-    catalog.projects = [...config.projects];
+    // Directory groups are discovered runtime state. Saving pins/notifications must not erase
+    // them or make them part of the durable account configuration.
+    const hostIds = new Set(config.hosts.map((host) => host.id));
+    catalog.projects = catalog.projects.filter((project) => hostIds.has(project.hostId));
   });
   gatewayDomainEvents.on("host-removed", ({ hostId }) => {
     useGatewayRealtimeStore().closeHostThreadEvents(hostId);

@@ -15,14 +15,13 @@ export async function readDaemonPid(remote: RemoteCodexEnv) {
 export async function openHostDaemonRestartDialog(page: Page, hostId: number) {
   await page.getByTestId("settings-toggle").click();
   await page.getByRole("tab", { name: "主机", exact: true }).click();
-  // Tab transitions can briefly hide Collapsible content; inspect the mounted trigger's state
-  // instead of treating transient invisibility as a reason to close an already-expanded Host.
-  const toggle = page.getByTestId(`host-edit-toggle-${hostId}`);
-  await expect(toggle).toBeVisible();
+  // Maintenance is a visible row action, independent of opening the SSH credential editor.
+  await expect(page.getByTestId(`host-edit-form-${hostId}`)).toBeHidden();
+  await expect(page.getByTestId(`host-management-status-${hostId}`)).toHaveAttribute(
+    "data-status",
+    "connected",
+  );
   const restart = page.getByTestId(`host-daemon-restart-${hostId}`);
-  if ((await toggle.getAttribute("aria-expanded")) === "false") {
-    await toggle.click();
-  }
   await expect(restart).toBeEnabled();
   await restart.click();
   await expect(page.getByRole("alertdialog")).toBeVisible();

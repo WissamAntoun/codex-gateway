@@ -85,9 +85,8 @@ export async function resetGatewayConfig(page: Page) {
       url: "/api/config/sync",
       method: "POST",
       body: {
-        version: 1,
+        version: 2,
         hosts: [],
-        projects: [],
         pinnedThreads: [],
       },
     },

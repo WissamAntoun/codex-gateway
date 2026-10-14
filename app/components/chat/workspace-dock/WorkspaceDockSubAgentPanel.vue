@@ -52,7 +52,6 @@ function interrupt() {
   void threadTurns.interruptThreadTurn({
     hostId: panel.value.hostId,
     threadId: panel.value.threadId,
-    projectId: preview.value?.projectId ?? null,
   });
 }
 </script>

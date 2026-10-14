@@ -69,7 +69,6 @@ export interface ThreadOpenResult {
   runtimeStatus?: ThreadRuntimeStatus | null;
   threadSettings?: ThreadSettingsState | null;
   tokenUsage?: ThreadTokenUsageState | null;
-  projectId?: number | null;
   project?: ProjectRecord | null;
   /** Cursor for the oldest currently cached timeline page; null means no older page exists. */
   oldestTimelineCursor: string | null;
@@ -120,11 +119,8 @@ export interface TokenUsageBreakdown {
 }
 
 /** Browser/server projection with user-scoped Gateway navigation metadata. */
-export type GatewayThread = Omit<AppServerThread, "projectId"> & {
-  /** App-server's global experimental project identity; never use it as a Gateway SQLite id. */
-  appServerProjectId: string | null;
+export type GatewayThread = AppServerThread & {
   hostId: number;
-  projectId: number | null;
   pinned: boolean;
   title: string | null;
 };

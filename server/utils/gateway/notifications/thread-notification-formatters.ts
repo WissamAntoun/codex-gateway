@@ -100,16 +100,9 @@ export function isTerminalGoalStatus(status: ThreadGoalStatus) {
 }
 
 function notificationTarget(event: GatewayEvent) {
-  const pinnedThread = currentGatewayMemoryState().pinnedThreads.find(
-    (thread) => thread.hostId === event.hostId && thread.threadId === event.threadId,
-  );
-  const metadata = currentGatewayMemoryState().threadMetadata.find(
-    (thread) => thread.hostId === event.hostId && thread.threadId === event.threadId,
-  );
   return {
     kind: "thread" as const,
     hostId: event.hostId,
-    projectId: pinnedThread?.projectId ?? metadata?.projectId ?? null,
     threadId: event.threadId,
   };
 }

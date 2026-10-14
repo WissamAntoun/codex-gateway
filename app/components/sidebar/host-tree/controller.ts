@@ -5,14 +5,12 @@ import type { LongPressContextMenuHandlers } from "@/composables/interactions/us
 
 export interface HostTreeController {
   hosts: HostRecord[];
-  availableProjectsByHost: Map<number, ProjectRecord[]>;
-  missingProjectsByHost: Map<number, ProjectRecord[]>;
+  projectsByHost: Map<number, ProjectRecord[]>;
   projectThreads: SidebarThread[];
   expandedHostIds: Set<number>;
-  expandedProjectIds: Set<number>;
-  expandedMissingProjectHostIds: Set<number>;
+  expandedProjectKeys: Set<string>;
   selectedHostId: number | null;
-  selectedProjectId: number | null;
+  selectedCwd: string | null;
   selectedThreadId: string | null;
   hostConnectionStatuses: Record<number, { status: string; message?: string | null }>;
   longPressHandlers?: LongPressContextMenuHandlers;
@@ -20,12 +18,9 @@ export interface HostTreeController {
   addProject: (host: HostRecord) => void;
   deleteHost: (hostId: number) => void;
   monitorHost: (hostId: number) => void;
-  selectProject: (projectId: number, event: MouseEvent) => void;
-  toggleMissingProjects: (hostId: number) => void;
-  editProject: (project: ProjectRecord) => void;
-  deleteProject: (projectId: number) => void;
+  selectProject: (project: ProjectRecord, event: MouseEvent) => void;
   startThreadInProject: (project: ProjectRecord) => void;
-  openThread: (threadId: string, context: { hostId: number; projectId: number }) => void;
+  openThread: (threadId: string, context: { hostId: number; cwd: string }) => void;
   toggleThreadPin: (threadId: string, pinned: boolean) => void;
   rename: (thread: SidebarThread & { hostId: number }) => void;
   threadRuntimeStatus: (hostId: number, threadId: string) => ThreadRuntimeStatus;

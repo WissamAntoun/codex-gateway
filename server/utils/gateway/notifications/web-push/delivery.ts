@@ -49,7 +49,6 @@ export async function deliverWebPushNotification(notification: ServerNotificatio
 function notificationPayload(notification: ServerNotification): WebPushPayload {
   const target = notification.target;
   const query = new URLSearchParams({ hostId: String(target.hostId) });
-  if (target.projectId !== null) query.set("projectId", String(target.projectId));
   if (target.threadId !== null) query.set("threadId", target.threadId);
   return {
     title: notification.title.slice(0, 160),

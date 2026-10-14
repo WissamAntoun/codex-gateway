@@ -47,7 +47,6 @@ export async function openTerminalSession(
     if (!sessionIsCurrent()) throw error;
     ctx.setError(messageFromError(error, ctx.t("app.openTerminalFailed"), ctx.errorLabels), {
       hostId: input.hostId,
-      projectId: input.projectId ?? null,
       threadId: input.threadId ?? null,
     });
     throw error;

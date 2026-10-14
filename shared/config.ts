@@ -1,9 +1,9 @@
 import type { GatewayConfig, GatewayNotificationSettings } from "./types";
 
-// Keep first paint bounded for item-heavy Codex 0.147 histories. Older turns are fetched only by
-// explicit history navigation; do not silently prepend a background page after the Agent viewport
-// mounts. A same-page cached view may retain a wider depth that the user already loaded.
-export const INITIAL_TURN_PAGE_LIMIT = 2;
+// thread/timeline/list counts entries, not Turns. One long running Turn must not trigger a
+// "two Turns missing" refresh or block first paint on hundreds of tools. Older entries remain
+// behind the official opaque cursor and are loaded only by explicit history navigation.
+export const INITIAL_TIMELINE_PAGE_LIMIT = 20;
 export const TIMELINE_PAGE_LIMIT = 100;
 export const SERVER_TURN_CACHE_LIMIT = 50;
 export const SERVER_THREAD_CACHE_LIMIT = 100;
@@ -52,9 +52,8 @@ export function normalizeNotificationSettings(
 
 export function defaultGatewayConfig(): GatewayConfig {
   return {
-    version: 1,
+    version: 2,
     hosts: [],
-    projects: [],
     pinnedThreads: [],
     notifications: defaultNotificationSettings(),
   };

@@ -20,17 +20,17 @@ export function useThreadSettingsControls() {
   const projectDefaultsStore = useGatewayProjectDefaultsStore();
   const { models, defaultModel } = storeToRefs(gateway);
   const { selectedThreadSettings } = storeToRefs(composer);
-  const { selectedHostId, selectedProjectId, selectedThreadId } = storeToRefs(navigation);
+  const { selectedHostId, selectedCwd, selectedThreadId } = storeToRefs(navigation);
   const newThreadModel = ref("");
   const newThreadEffort = ref<ReasoningEffort>("default");
   const newThreadApprovalMode = ref<ApprovalPolicy | "custom">("custom");
   const selectedProvider = ref<AgentProviderId>("codex");
 
   const projectDefaults = computed(() => {
-    if (selectedHostId.value === null || selectedProjectId.value === null) return null;
+    if (selectedHostId.value === null || selectedCwd.value === null) return null;
     return projectDefaultsStore.defaultsFor(
       selectedHostId.value,
-      selectedProjectId.value,
+      selectedCwd.value,
       selectedProvider.value,
     );
   });
@@ -39,10 +39,10 @@ export function useThreadSettingsControls() {
   );
 
   watch(
-    [selectedHostId, selectedProjectId, selectedProvider],
-    ([hostId, projectId, provider]) => {
-      if (hostId === null || projectId === null) return;
-      void projectDefaultsStore.ensure(hostId, projectId, provider).catch((error: unknown) => {
+    [selectedHostId, selectedCwd, selectedProvider],
+    ([hostId, cwd, provider]) => {
+      if (hostId === null || cwd === null) return;
+      void projectDefaultsStore.ensure(hostId, cwd, provider).catch((error: unknown) => {
         console.warn("[gateway] failed to resolve remote project defaults", error);
       });
     },

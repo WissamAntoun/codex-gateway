@@ -35,12 +35,16 @@ import {
   waitForChatScrollToSettle,
 } from "./helpers/scroll";
 import {
+  addRemoteHost,
   execRemoteSsh,
   type RemoteCodexEnv,
   waitForSelectedThreadId,
 } from "./helpers/remote-codex";
 
-test("uses the mobile layout with hidden sidebar and usable composer shell", async ({ page }) => {
+test("uses the mobile layout with hidden sidebar, composer shell, and host management", async ({
+  page,
+  remoteWorkspace,
+}, testInfo) => {
   await openApp(page);
 
   await expect(page.getByTestId("mobile-layout")).toBeVisible();
@@ -54,6 +58,34 @@ test("uses the mobile layout with hidden sidebar and usable composer shell", asy
 
   await expect(page.getByTestId("chat-scroll-area")).toBeVisible();
   await expect(page.getByText("先选择一个项目")).toBeVisible();
+
+  await page.getByTestId("mobile-sidebar-toggle").click();
+  const host = await addRemoteHost(page, remoteWorkspace.remote, `mobile-host-${Date.now()}`, {
+    waitForConnection: false,
+  });
+  if (!(await page.getByTestId("settings-toggle").isVisible())) {
+    await page.getByTestId("mobile-sidebar-toggle").click();
+  }
+  await page.getByTestId("settings-toggle").click();
+  await page.getByRole("tab", { name: "主机", exact: true }).click();
+  await expect(page.getByTestId("host-name-input")).toBeHidden();
+  await expect(page.getByTestId(`host-management-status-${host.id}`)).toHaveAttribute(
+    "data-status",
+    "connected",
+  );
+  await expect(page.getByTestId(`host-daemon-restart-${host.id}`)).toBeVisible();
+  const dialog = page.getByTestId("settings-dialog");
+  expect(
+    await dialog.evaluate((element) => element.scrollWidth - element.clientWidth),
+  ).toBeLessThanOrEqual(1);
+  await dialog.screenshot({ path: testInfo.outputPath("host-management-mobile.png") });
+  await page.getByTestId(`host-edit-toggle-${host.id}`).click();
+  await expect(
+    page
+      .getByTestId(`host-edit-form-${host.id}`)
+      .getByRole("textbox", { name: "名称", exact: true }),
+  ).toHaveValue(host.name);
+  await page.keyboard.press("Escape");
 });
 
 test("shows effort and compact context usage without mobile approval controls", async ({
@@ -73,7 +105,7 @@ test("shows effort and compact context usage without mobile approval controls", 
     reasoningOutputTokens: 2_000,
   };
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Mobile composer settings" },
     threadSettings: { model: "gpt-6-luna", effort: "medium", approvalPolicy: "never" },
@@ -151,7 +183,7 @@ test("gives the Goal objective most of the mobile details dialog", async ({ page
   await openApp(page);
   const threadId = "mobile-goal-details-layout";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Mobile Goal details" },
   });
@@ -243,7 +275,7 @@ test("virtualizes a large running turn in one agent timeline", async ({ page }, 
     exitCode: 0,
   };
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Large mobile turn" },
     status: "running",
@@ -333,7 +365,7 @@ test("explicit history prepend keeps the mobile timeline visually stable", async
     nextCursor: null,
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Mobile Top Up" },
     oldestTimelineCursor: "cursor-before-oldest",
@@ -370,7 +402,7 @@ test("mobile viewport resize during explicit history prepend stays bottom pinned
     nextCursor: null,
   });
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Mobile Resize Top Up" },
     oldestTimelineCursor: "cursor-before-oldest",
@@ -411,7 +443,7 @@ test("mobile touch scrolling stays anchored while Agent output streams", async (
   await openApp(page);
   const threadId = "mobile-active-touch-stream";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Active Touch Stream" },
     status: "running",
@@ -487,7 +519,7 @@ test("mobile momentum scrolling stays anchored after touchend while output strea
   await openApp(page);
   const threadId = "mobile-momentum-stream";
   await seedGatewayThread(page, {
-    projectId: 1,
+    cwd: "/tmp/e2e",
     threadId,
     currentThread: { id: threadId, name: "Momentum Stream" },
     status: "running",
@@ -581,13 +613,13 @@ test("opens sidebar context actions with long press on mobile", async ({
   ) {
     await page.getByTestId("mobile-sidebar-toggle").click();
   }
-  await expect(page.getByTestId(`project-button-${project.id}`)).toBeVisible();
-  await longPress(page, page.getByTestId(`project-button-${project.id}`));
+  await expect(page.getByTestId(`project-button-${project.remotePath}`)).toBeVisible();
+  await longPress(page, page.getByTestId(`project-button-${project.remotePath}`));
   await page.getByRole("menuitem", { name: /新建/ }).click();
   const threadId = await waitForSelectedThreadId(page);
 
   await page.getByTestId("mobile-sidebar-toggle").click();
-  await page.getByTestId(`project-button-${project.id}`).click();
+  await page.getByTestId(`project-button-${project.remotePath}`).click();
   await expect(page.getByTestId("project-thread-list")).toBeVisible();
   await expect(page.getByTestId("open-tmux-mobile-button")).toBeVisible();
   await expect(page.getByTestId("open-host-monitor-mobile-button")).toBeVisible();
@@ -653,7 +685,7 @@ test("opens and closes the subagent side panel on mobile", async ({ page }) => {
     threadViews: {
       "1:mobile-subagent-thread": {
         hostId: 1,
-        projectId: null,
+        cwd: subAgentThread.cwd,
         threadId: subThreadId,
         currentThread: subAgentThread,
         history: {
@@ -722,7 +754,7 @@ printf '%s\n' '# Mobile File Workspace' 'Rendered from the remote tree.' > ${she
   const threadId = `mobile-file-thread-${Date.now()}`;
   await seedGatewayThread(page, {
     hostId: host.id,
-    projectId: project.id,
+    cwd: project.remotePath,
     host: { ...host },
     project: { ...project },
     threadId,
@@ -792,7 +824,7 @@ printf '%s\n' '# Mobile File Workspace' 'Rendered from the remote tree.' > ${she
   const plainThreadId = `mobile-plain-thread-${Date.now()}`;
   await seedGatewayThread(page, {
     hostId: host.id,
-    projectId: plainProject.id,
+    cwd: plainProject.remotePath,
     host: { ...host },
     project: { ...plainProject },
     threadId: plainThreadId,

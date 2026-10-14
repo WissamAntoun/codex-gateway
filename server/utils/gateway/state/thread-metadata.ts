@@ -23,13 +23,12 @@ export const threadMetadataStore = {
     );
   },
 
-  record(hostId: number, projectId: number | null, thread: AppServerThread) {
+  record(hostId: number, thread: AppServerThread) {
     const threadId = thread.id;
     subAgentThreadStore.recordThreadMetadata(hostId, thread);
     const timestamp = Math.floor(Date.now() / 1000);
     const metadata = {
       hostId,
-      projectId,
       threadId,
       parentThreadId: parentThreadIdFromMetadata(thread),
       agentNickname: thread.agentNickname ?? null,
@@ -53,7 +52,6 @@ export const threadMetadataStore = {
       currentGatewayMemoryState().threadMetadata[index] = {
         ...existing,
         ...metadata,
-        projectId: projectId ?? existing.projectId,
         parentThreadId: metadata.parentThreadId ?? existing.parentThreadId,
         agentNickname: metadata.agentNickname ?? existing.agentNickname,
         agentRole: metadata.agentRole ?? existing.agentRole,
@@ -68,13 +66,10 @@ export const threadMetadataStore = {
     }
   },
 
-  list(hostId: number, options: { projectId?: number | null; cwd?: string | null } = {}) {
+  list(hostId: number, options: { cwd?: string | null } = {}) {
     return currentGatewayMemoryState()
       .threadMetadata.filter((thread) => {
         if (thread.hostId !== hostId) {
-          return false;
-        }
-        if (options.projectId != null && thread.projectId !== options.projectId) {
           return false;
         }
         if (
@@ -89,7 +84,6 @@ export const threadMetadataStore = {
       })
       .map((thread) => ({
         id: thread.threadId,
-        projectId: thread.projectId,
         parentThreadId: thread.parentThreadId,
         agentNickname: thread.agentNickname,
         agentRole: thread.agentRole,

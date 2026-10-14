@@ -4,7 +4,7 @@ import { expectProjectDefaultsSnapshot } from "@/stores/gateway-realtime/respons
 
 export async function requestProjectDefaults(input: {
   hostId: number;
-  projectId: number;
+  cwd: string;
   provider: AgentProviderId;
 }): Promise<AgentProjectDefaults> {
   const response = await useGatewayRealtimeStore().request(

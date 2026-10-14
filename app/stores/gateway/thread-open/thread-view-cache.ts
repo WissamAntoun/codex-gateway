@@ -95,7 +95,7 @@ export function activateThreadViewFromCache(hostId: number, threadId: string) {
   // Route changes are selection only: restore the already-projected Pinia references. Do not call
   // setHistory() here, because remounting Agent for Dockview must not rescan a large cached thread.
   navigation.selectedHostId = view.hostId;
-  navigation.selectedProjectId = view.projectId;
+  navigation.selectedCwd = view.currentThread?.cwd ?? view.cwd;
   navigation.selectedThreadId = view.threadId;
   views.currentThread = view.currentThread;
   views.history = view.history;
@@ -120,7 +120,7 @@ export function saveSelectedThreadView() {
   }
   upsertThreadView({
     hostId: navigation.selectedHostId,
-    projectId: navigation.selectedProjectId,
+    cwd: navigation.selectedCwd,
     threadId: navigation.selectedThreadId,
     currentThread: views.currentThread,
     history: views.history,
@@ -183,7 +183,7 @@ export function markThreadEventsApplied(events: GatewayEvent[]) {
 function emptyThreadView(hostId: number, threadId: string): ThreadViewState {
   return {
     hostId,
-    projectId: null,
+    cwd: null,
     threadId,
     currentThread: null,
     history: null,

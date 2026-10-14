@@ -166,7 +166,7 @@ done
   };
   await seedGatewayThread(page, {
     hostId: host.id,
-    projectId: project.id,
+    cwd: project.remotePath,
     host: { ...host },
     project: { ...project },
     threadId,
@@ -419,7 +419,7 @@ done
 
   await seedGatewayThread(page, {
     hostId: host.id,
-    projectId: project.id,
+    cwd: project.remotePath,
     host: { ...host },
     project: { ...project },
     threadId,
@@ -609,7 +609,7 @@ done
   await reloadApp(page);
   await seedGatewayThread(page, {
     hostId: host.id,
-    projectId: project.id,
+    cwd: project.remotePath,
     host: { ...host },
     project: { ...project },
     threadId,
@@ -658,7 +658,7 @@ done
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await seedGatewayThread(page, {
       hostId: host.id,
-      projectId: project.id,
+      cwd: project.remotePath,
       host: { ...host },
       project: { ...project },
       threadId: alternateThreadId,
@@ -680,7 +680,7 @@ done
 
     await seedGatewayThread(page, {
       hostId: host.id,
-      projectId: project.id,
+      cwd: project.remotePath,
       host: { ...host },
       project: { ...project },
       threadId,

@@ -17,7 +17,7 @@ test("streams real Linux Host metrics through the shared realtime connection", a
     projectName: "Metrics project",
   });
 
-  await expect(page.getByTestId(`project-button-${project.id}`)).toBeVisible();
+  await expect(page.getByTestId(`project-button-${project.remotePath}`)).toBeVisible();
   await page.getByTestId("open-host-monitor-button").click();
   const panel = page.getByTestId("host-metrics-panel");
   await expect(panel).toBeVisible();

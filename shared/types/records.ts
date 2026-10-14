@@ -17,15 +17,13 @@ export interface HostRecord {
 }
 
 export interface ProjectRecord {
-  id: number;
+  /** Runtime directory group, identified by hostId + remotePath; never persisted. */
   hostId: number;
   name: string;
   remotePath: string;
   createdAt: string;
   updatedAt: string;
 }
-
-export type ProjectDirectoryAvailability = "available" | "missing";
 
 export interface HostCreateInput {
   name: string;
@@ -46,8 +44,6 @@ export interface ProjectCreateInput {
   name: string;
   remotePath: string;
 }
-
-export type ProjectUpdateInput = ProjectCreateInput;
 
 interface RpcTrace {
   traceparent?: string | null;

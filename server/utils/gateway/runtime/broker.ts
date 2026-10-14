@@ -10,7 +10,7 @@ import {
   parseThreadAttachmentsPage,
   parseThreadAttachmentRemoveResponse,
 } from "~~/shared/runtime/app-server";
-import { INITIAL_TURN_PAGE_LIMIT } from "~~/shared/config";
+import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import type { ServerRequestResponseInput, TurnStartInput, TurnSteerInput } from "./types";
 import { ControllerRegistry, type ThreadSubscriptionLease } from "./controller-registry";
 import { ThreadOpenService } from "./thread-open-service";
@@ -37,17 +37,15 @@ class ThreadBroker {
   async openThread(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
-    limit = INITIAL_TURN_PAGE_LIMIT,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
     controller?: Awaited<ThreadSubscriptionLease["ready"]>,
   ) {
-    return this.openService.openThread(host, threadId, projectId, limit, controller);
+    return this.openService.openThread(host, threadId, limit, controller);
   }
 
   async startThread(
     host: HostRecord,
     params: Record<string, unknown>,
-    projectId: number | null,
     providerId: AgentProviderId = "codex",
   ) {
     const client = await this.registry.getHostClient(host, providerId);
@@ -61,7 +59,7 @@ class ThreadBroker {
       // It exposes exact per-response usage metadata without changing persisted rollout history.
       experimentalRawEvents: true,
     });
-    const started = this.openService.startedThreadResult(host, projectId, result);
+    const started = this.openService.startedThreadResult(host, result);
     await this.registry.retainStartedThreadSubscription(host, started.threadId, providerId);
     return started.result;
   }
@@ -271,10 +269,9 @@ class ThreadBroker {
   async refreshThreadState(
     host: HostRecord,
     threadId: string,
-    projectId: number | null,
-    limit = INITIAL_TURN_PAGE_LIMIT,
+    limit = INITIAL_TIMELINE_PAGE_LIMIT,
   ) {
-    return this.openService.refreshThreadState(host, threadId, projectId, limit);
+    return this.openService.refreshThreadState(host, threadId, limit);
   }
 
   async refreshThreadRuntimeStatus(host: HostRecord, threadId: string) {

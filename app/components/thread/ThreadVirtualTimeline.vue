@@ -24,7 +24,6 @@ const props = defineProps<{
   threadStatus: ThreadRuntimeStatus;
   turns: ThreadTimelineTurn[];
   hostId: number | null;
-  projectId?: number | null;
   workspaceRoot?: string | null;
   loading: boolean;
   loadingOlder: boolean;
@@ -48,7 +47,6 @@ onScopeDispose(() => {
   }
 });
 const userDetachedFromLatest = ref(false);
-const projectId = computed(() => props.projectId ?? null);
 const planModeActive = computed(() => selectedThreadMode() === "plan");
 const threadIsRunning = computed(() => props.threadStatus === "running");
 const activeTurnId = computed(() =>
@@ -60,7 +58,7 @@ const autoCollapseIntermediate = computed(() => !userDetachedFromLatest.value);
 
 provideFilePreviewContext({
   hostId: toRef(props, "hostId"),
-  projectId,
+  cwd: computed(() => props.workspaceRoot ?? null),
   threadId: toRef(props, "threadId"),
   workspaceRoot: computed(() => props.workspaceRoot ?? null),
 });

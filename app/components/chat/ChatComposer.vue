@@ -43,7 +43,7 @@ const {
   selectedThreadGoalObservedAt,
   selectedThreadId,
   selectedHostId,
-  selectedProjectId,
+  selectedCwd,
   selectedThreadStatus,
   selectedThreadTokenUsage,
   sendButtonLabel,
@@ -80,7 +80,7 @@ const {
     :uploading-attachments="uploadingAttachments"
     :selected-thread-id="selectedThreadId"
     :selected-host-id="selectedHostId"
-    :selected-project-id="selectedProjectId"
+    :selected-cwd="selectedCwd"
     :selected-approval-mode="selectedApprovalMode"
     :selected-provider="selectedProvider"
     :provider-options="providerOptions"

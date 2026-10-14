@@ -86,7 +86,7 @@ class ActiveMainThreadMonitor {
 
     if (method === "thread/started") {
       const thread = startedThread(message);
-      if (thread !== null) threadMetadataStore.record(context.host.id, null, thread);
+      if (thread !== null) threadMetadataStore.record(context.host.id, thread);
       // `thread/started` also announces newly-created idle threads. Resuming every announcement
       // would materialize conversations that no Gateway browser is using. Status broadcasts cover
       // later turns, so only an already-active main thread is eligible for monitor ownership here.

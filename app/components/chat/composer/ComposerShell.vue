@@ -37,7 +37,7 @@ const props = defineProps<{
   uploadingAttachments: boolean;
   selectedThreadId: string | null;
   selectedHostId: number | null;
-  selectedProjectId: number | null;
+  selectedCwd: string | null;
   selectedApprovalMode: ApprovalPolicy | "custom";
   selectedProvider: AgentProviderId;
   providerOptions: readonly AgentProviderOption[];
@@ -92,7 +92,7 @@ function openAttachmentPicker() {
 }
 
 function composerScopeKey() {
-  return `${props.selectedProjectId ?? "none"}:${props.selectedThreadId ?? "new"}`;
+  return JSON.stringify([props.selectedHostId, props.selectedThreadId ?? props.selectedCwd]);
 }
 
 function updateModelValue(value: string, sourceScopeKey: string) {
@@ -146,7 +146,7 @@ function updateFileReferences(value: ComposerFileReference[], sourceScopeKey: st
           :references="fileReferences"
           :scope-key="composerScopeKey()"
           :host-id="selectedHostId"
-          :project-id="selectedProjectId"
+          :cwd="selectedCwd"
           :disabled="!composerInputEnabled"
           :placeholder="$t('app.askFollowUp')"
           :limit-message="$t('app.fileReferenceLimit', { count: 10 })"

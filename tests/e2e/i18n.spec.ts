@@ -18,7 +18,7 @@ test("requires bearer auth for protected HTTP APIs", async ({ page }) => {
   const config = await authenticatedFetch(page, { url: "/api/config/export" }, (value) =>
     z.object({ version: z.number().int() }).loose().parse(value),
   );
-  expect(config.version).toBe(1);
+  expect(config.version).toBe(2);
 });
 
 test("defaults to Chinese and can switch to English", async ({ page }) => {
@@ -84,7 +84,7 @@ test("config JSON editor shows current config by default and scrolls", async ({ 
   await expect(editor).toContainText('"notifications"');
   const largeConfig = JSON.stringify(
     {
-      version: 1,
+      version: 2,
       hosts: Array.from({ length: 80 }, (_, index) => ({
         id: index + 1,
         name: `host-${index}`,
