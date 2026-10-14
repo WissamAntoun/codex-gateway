@@ -1,14 +1,18 @@
 import { expect, test } from "./fixtures/remote-workspace";
-import type { HostRecord } from "../../shared/types";
+import type { Page } from "@playwright/test";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { parseCodexVersion } from "../../server/utils/gateway/infra/codex/codex-version";
-import { authenticatedFetch, openApp, reloadApp } from "./helpers/app";
+import { authenticatedFetch, E2E_PASSWORD, openApp, reloadApp } from "./helpers/app";
 import { hostRecordSchema } from "./helpers/http-schemas";
 import {
   addRemoteProject,
+  addRemoteHost,
   execRemoteSsh,
   readContainerCodexVersion,
   readUpgradeRemoteEnvs,
   type RemoteCodexEnv,
+  type UiHost,
   resetRemoteAppServer,
   remoteCodexCommand,
   sendTextTurn,
@@ -31,8 +35,9 @@ test("parses current Codex CLI and app-server user-agent versions", () => {
   );
 });
 
-test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurrency", async ({
+test("upgrades SSH runtimes and shows shared-target progress across browser pages", async ({
   page,
+  browser,
 }) => {
   test.setTimeout(10 * 60_000);
   const environments = await readUpgradeRemoteEnvs();
@@ -51,9 +56,34 @@ test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurre
     }
   }
 
-  await openApp(page);
-  const hosts: HostRecord[] = [];
+  await openApp(page, { interceptRealtime: false });
+  // Account setup uses the normal registration script; both viewers then authenticate and add
+  // their hosts through the real UI. Each account keeps its own host names and credentials.
+  const username = `upgrade-observer-${Date.now()}`;
+  await promisify(execFile)("node", ["scripts/create-user.mjs", username, E2E_PASSWORD]);
+  const otherContext = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  const otherPage = await otherContext.newPage();
+  await otherPage.goto("/", { waitUntil: "domcontentloaded" });
+  await otherPage.getByTestId("login-username").fill(username);
+  await otherPage.getByTestId("login-password").fill(E2E_PASSWORD);
+  await otherPage.getByTestId("login-submit").click();
+  await expect(otherPage.getByTestId("login-form")).toBeHidden();
+  await openApp(otherPage, { resetConfig: false, interceptRealtime: false });
+
+  const host = await addRemoteHost(page, remote, `upgrade-owner-${Date.now()}`, {
+    waitForConnection: false,
+  });
+  await expectHostUpgradeProgress(page, host.id);
+  const alias = await addRemoteHost(otherPage, remote, `upgrade-observer-${Date.now()}`, {
+    waitForConnection: false,
+  });
+  await expectHostUpgradeProgress(otherPage, alias.id);
+  const hosts: UiHost[] = [];
   for (const environment of environments) {
+    if (environment === remote) {
+      hosts.push(host);
+      continue;
+    }
     hosts.push(
       await authenticatedFetch(
         page,
@@ -87,6 +117,18 @@ test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurre
     await verifyOfficialStandaloneLayout(environment);
   }
 
+  for (const targetPage of [page, otherPage]) {
+    await expect(targetPage.getByTestId("host-upgrade-progress")).toHaveCount(0, {
+      timeout: 120_000,
+    });
+  }
+  await authenticatedFetch(
+    otherPage,
+    { url: `/api/hosts/${alias.id}`, method: "DELETE" },
+    () => undefined,
+  );
+  await otherContext.close();
+
   for (const [index, environment] of environments.entries()) {
     if (environment === remote) continue;
     await authenticatedFetch(
@@ -100,9 +142,7 @@ test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurre
     await stopRemoteFixture(environment);
   }
 
-  const host = hosts[environments.indexOf(remote)]!;
-  // Hosts were registered directly through the API so all upgrades could queue immediately.
-  // Refresh once before the sole product-flow test to hydrate Pinia with the surviving Host.
+  // Refresh before starting the product flow with the surviving host.
   await reloadApp(page);
   const project = await addRemoteProject(page, remote, host.id, `upgrade-project-${Date.now()}`);
   const threadId = await startRemoteThreadFromProjectMenu(page, remote, project.remotePath);
@@ -115,6 +155,14 @@ test("upgrades empty, legacy Node, and npm Codex SSH hosts with bounded concurre
     timeout: 240_000,
   });
 });
+
+async function expectHostUpgradeProgress(page: Page, hostId: number) {
+  await page.getByTestId("settings-toggle").click();
+  await page.getByRole("tab", { name: "主机", exact: true }).click();
+  const row = page.getByTestId(`host-management-status-${hostId}`);
+  await expect(row.getByTestId("host-upgrade-progress")).toBeVisible();
+  await expect(page.getByTestId(`host-daemon-restart-${hostId}`)).toBeDisabled();
+}
 
 async function verifyInitialRuntime(remote: RemoteCodexEnv) {
   const checks = {

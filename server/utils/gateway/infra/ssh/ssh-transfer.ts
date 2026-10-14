@@ -4,7 +4,7 @@ import { pipeline } from "node:stream/promises";
 import type { SFTPWrapper } from "ssh2";
 import type { HostWithSecret } from "./ssh-types";
 import { isConnectionLevelSshError } from "./ssh-errors";
-import { withSftpUploadProgress } from "./ssh-upload-progress";
+import { withSftpUploadProgress, type SftpUploadProgress } from "./ssh-upload-progress";
 
 // @types/ssh2 omits the public counter maintained by SFTP WriteStream._write/_writev.
 // Declare the actual library field so progress tracking needs neither a cast nor a second counter.
@@ -43,6 +43,7 @@ export async function uploadFileResumable(
   host: HostWithSecret,
   localPath: string,
   remotePath: string,
+  onProgress?: (progress: SftpUploadProgress) => void,
 ) {
   const localSize = (await statLocal(localPath)).size;
   const partialPath = `${remotePath}.part`;
@@ -89,6 +90,7 @@ export async function uploadFileResumable(
         await renameRemoteFile(sftp, partialPath, remotePath);
         monitor.phase("completed");
       },
+      onProgress,
     );
   } catch (error) {
     // A stalled SFTP request does not prove the shared Agent/Terminal transport is dead.

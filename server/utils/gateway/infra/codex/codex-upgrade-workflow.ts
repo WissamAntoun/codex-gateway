@@ -7,6 +7,7 @@ import { CodexUpgradeCoordinator } from "./codex-upgrade-queue";
 import type { CodexVersionChecker } from "./codex-version-checker";
 import { codexUpgradeLog } from "./codex-upgrade-log";
 import type { CodexUpgradeResources } from "./codex-upgrade-resources";
+import { hostUpgradeState } from "../../state/host-upgrades";
 
 export class CodexUpgradeWorkflow {
   private readonly coordinator = new CodexUpgradeCoordinator();
@@ -27,6 +28,7 @@ export class CodexUpgradeWorkflow {
         resources,
         attempt,
       );
+      hostUpgradeState.update(host, { phase: "restarting" });
       await this.runtime.ensureStoppedAfterUpgrade(host);
 
       return {
@@ -46,9 +48,9 @@ export class CodexUpgradeWorkflow {
     observedBeforeVersion: string,
   ): Promise<RemoteCodexVersionState> {
     return await this.runExclusive(host, async (resources, attempt) => {
-      // Hosts can wait in this queue for several minutes. Re-read both CLI and app-server state
-      // when this Host reaches the front so a newly started thread is never interrupted and an
-      // externally completed upgrade is not repeated.
+      // Another alias of this remote account may have held the target lock. Re-read both CLI and
+      // app-server state after acquiring it so a new thread is not interrupted and an externally
+      // completed upgrade is not repeated.
       const installed = await this.versionChecker.readVersionOrRecoverableMissing(host);
       const beforeVersion = installed.version;
       const runtimeState = await this.runtime.readState(host);
@@ -154,6 +156,7 @@ export class CodexUpgradeWorkflow {
         return await install();
       },
     );
+    hostUpgradeState.update(host, { phase: "restarting" });
     await this.runtime.ensureStoppedAfterUpgrade(host);
     if (!isCodexVersionAtLeast(version, supportedVersion)) {
       throw new Error(
@@ -174,7 +177,17 @@ export class CodexUpgradeWorkflow {
   ) {
     const resources = this.upgrader.createResources(host);
     try {
-      return await this.coordinator.run(host, (attempt) => work(resources, attempt));
+      return await this.coordinator.run(host, async (attempt) => {
+        hostUpgradeState.begin(host, SUPPORTED_CODEX_VERSION);
+        try {
+          const result = await work(resources, attempt);
+          hostUpgradeState.finish(host, false);
+          return result;
+        } catch (error) {
+          hostUpgradeState.finish(host, true);
+          throw error;
+        }
+      });
     } finally {
       await resources.dispose();
     }

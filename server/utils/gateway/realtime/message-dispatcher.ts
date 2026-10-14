@@ -55,6 +55,9 @@ export class RealtimeMessageDispatcher {
       .with({ type: "host.lifecycle.subscribe" }, (value) =>
         this.dispatchEntry(peer, value, this.handlers[value.type]),
       )
+      .with({ type: "host.upgrades.read" }, (value) =>
+        this.dispatchEntry(peer, value, this.handlers[value.type]),
+      )
       .with({ type: "host.daemon.restart" }, (value) =>
         this.dispatchEntry(peer, value, this.handlers[value.type]),
       )

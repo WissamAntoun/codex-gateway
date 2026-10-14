@@ -27,6 +27,7 @@ import type { GatewayMcpServerStatus } from "./mcp";
 import type { AgentProviderId } from "../agent/providers";
 import type { AgentProjectDefaults } from "./agent-defaults";
 import type { WebPushSubscription } from "../notifications/web-push";
+import type { HostUpgradeProgress } from "../host-upgrade";
 
 export type RealtimeClientMessage =
   | { type: "notification.webPush.configure"; requestId: string }
@@ -42,6 +43,7 @@ export type RealtimeClientMessage =
   | {
       type: "host.lifecycle.unsubscribe";
     }
+  | { type: "host.upgrades.read"; requestId: string }
   | {
       type: "host.daemon.restart";
       requestId: string;
@@ -378,7 +380,14 @@ export type RealtimeServerMessage =
           | "mfaRequired";
         message: string;
         createdAt?: string;
+        upgradeProgress?: HostUpgradeProgress | null;
       };
+    }
+  | {
+      type: "host.upgrades.snapshot";
+      requestId: string;
+      createdAt: string;
+      upgrades: Array<{ hostId: number; progress: HostUpgradeProgress | null }>;
     }
   | {
       type: "project.defaults.snapshot";

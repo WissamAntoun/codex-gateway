@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hostUpgradeProgressSchema } from "../../host-upgrade";
 import type { RealtimeServerMessage } from "../../types";
 import { reasoningSummarySchema } from "../../reasoning-summary";
 import { threadTimelineItemTypes } from "../../thread-history/types";
@@ -446,12 +447,23 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
             ]),
             message: z.string(),
             createdAt: z.string().optional(),
+            upgradeProgress: hostUpgradeProgressSchema.nullable().optional(),
           })
           .strict(),
       })
       .strict(),
     z
       .object({ type: z.literal("host.daemon.restarted"), ...requestIdField, hostId: positiveId })
+      .strict(),
+    z
+      .object({
+        type: z.literal("host.upgrades.snapshot"),
+        ...requestIdField,
+        createdAt: z.string(),
+        upgrades: z.array(
+          z.object({ hostId: positiveId, progress: hostUpgradeProgressSchema.nullable() }).strict(),
+        ),
+      })
       .strict(),
     z
       .object({

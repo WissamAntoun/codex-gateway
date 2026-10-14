@@ -68,6 +68,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
     z.object({ type: z.literal("auth.authenticate"), token: nonEmptyString }).strict(),
     z.object({ type: z.literal("host.lifecycle.subscribe") }).strict(),
     z.object({ type: z.literal("host.lifecycle.unsubscribe") }).strict(),
+    z.object({ type: z.literal("host.upgrades.read"), ...requestIdField }).strict(),
     z
       .object({ type: z.literal("host.daemon.restart"), ...requestIdField, hostId: positiveId })
       .strict(),

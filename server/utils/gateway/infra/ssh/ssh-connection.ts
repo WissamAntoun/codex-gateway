@@ -341,8 +341,13 @@ export class SshConnectionPool extends EventEmitter<SshConnectionPoolEvents> {
     this.sftpChannels.close(this.connectionKeyFor(host));
   }
 
-  async uploadFileResumable(host: HostWithSecret, localPath: string, remotePath: string) {
-    return await uploadFileResumable(this, host, localPath, remotePath);
+  async uploadFileResumable(
+    host: HostWithSecret,
+    localPath: string,
+    remotePath: string,
+    onProgress?: (progress: import("./ssh-upload-progress").SftpUploadProgress) => void,
+  ) {
+    return await uploadFileResumable(this, host, localPath, remotePath, onProgress);
   }
 
   syncHosts(hosts: HostWithSecret[]) {

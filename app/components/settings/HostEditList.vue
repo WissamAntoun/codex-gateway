@@ -15,8 +15,11 @@ const connectedCount = computed(
 );
 const upgradingCount = computed(
   () =>
-    hosts.value.filter((host) => hostConnectionStatuses.value[host.id]?.status === "upgrading")
-      .length,
+    hosts.value.filter(
+      (host) =>
+        hostConnectionStatuses.value[host.id]?.upgradeProgress != null ||
+        hostConnectionStatuses.value[host.id]?.status === "upgrading",
+    ).length,
 );
 </script>
 

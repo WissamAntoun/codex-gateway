@@ -4,6 +4,11 @@ import { gatewayLog } from "../../logging";
 const UPLOAD_IDLE_TIMEOUT_MS = 120_000;
 const PROGRESS_LOG_INTERVAL_MS = 30_000;
 
+export interface SftpUploadProgress {
+  bytes: number;
+  totalBytes: number;
+}
+
 interface UploadMonitor {
   signal: AbortSignal;
   phase(name: string): void;
@@ -15,6 +20,7 @@ export async function withSftpUploadProgress(
   totalBytes: number,
   closeChannel: () => void,
   upload: (monitor: UploadMonitor) => Promise<void>,
+  onProgress?: (progress: SftpUploadProgress) => void,
 ) {
   const controller = new AbortController();
   const idle = Promise.withResolvers<never>();
@@ -42,6 +48,7 @@ export async function withSftpUploadProgress(
     }
     if (Date.now() - lastLogAt >= PROGRESS_LOG_INTERVAL_MS) {
       gatewayLog("info", "gateway-ssh", "SFTP upload progress", details());
+      onProgress?.(details());
       lastLogAt = Date.now();
     }
     if (Date.now() - lastProgressAt >= UPLOAD_IDLE_TIMEOUT_MS) {
@@ -74,9 +81,12 @@ export async function withSftpUploadProgress(
           bytes = readBytes();
           lastProgressAt = Date.now();
           gatewayLog("info", "gateway-ssh", "SFTP upload resumed", details());
+          onProgress?.(details());
         },
       }),
     ]);
+    bytes = readBytes();
+    onProgress?.(details());
   } finally {
     clearInterval(timer);
   }
