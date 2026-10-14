@@ -53,8 +53,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex min-w-0 items-center gap-1.5 pt-1.5 sm:flex-wrap sm:justify-between sm:gap-2">
-    <div class="flex min-w-0 items-center gap-1 text-base text-ink-muted">
+  <div class="flex min-w-0 items-center gap-1.5 pt-1.5 sm:gap-2">
+    <div class="flex shrink-0 items-center gap-1 text-base text-ink-muted">
       <Button
         type="button"
         variant="ghost"
@@ -67,14 +67,12 @@ const emit = defineEmits<{
         <Loader2Icon v-if="uploadingAttachments" class="size-5 animate-spin" />
         <PlusIcon v-else class="size-5" />
       </Button>
-      <div class="composer-approval-control">
-        <ApprovalPolicyPicker
-          :model-value="selectedApprovalMode"
-          @update:model-value="emit('updateSelectedApprovalMode', $event)"
-        />
-      </div>
+      <ApprovalPolicyPicker
+        :model-value="selectedApprovalMode"
+        @update:model-value="emit('updateSelectedApprovalMode', $event)"
+      />
     </div>
-    <div class="ml-auto flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
+    <div class="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
       <ContextUsageMeter :token-usage="selectedThreadTokenUsage" />
       <ModelEffortPicker
         :models="models"
@@ -115,17 +113,3 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
-
-<style scoped>
-.composer-approval-control {
-  display: none;
-}
-
-/* Dockview can make the composer narrow while the browser viewport remains desktop-sized. Query
-   the control surface itself so approval yields to model, effort, context, and send controls. */
-@container (min-width: 44rem) {
-  .composer-approval-control {
-    display: block;
-  }
-}
-</style>
