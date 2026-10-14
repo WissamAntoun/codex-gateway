@@ -85,6 +85,10 @@ export function createRealtimeServerMessageDispatcher(ctx: RealtimeServerMessage
         {
           type: P.union(
             "thread.snapshot",
+            "host.daemon.restarted",
+            "notification.webPush.configured",
+            "notification.webPush.subscribed",
+            "notification.webPush.unsubscribed",
             "thread.started",
             "thread.timeline.page",
             "thread.attachments.page",

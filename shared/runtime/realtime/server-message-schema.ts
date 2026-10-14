@@ -408,6 +408,15 @@ const agentProjectDefaultsSchema = z
 export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.discriminatedUnion(
   "type",
   [
+    z
+      .object({
+        type: z.literal("notification.webPush.configured"),
+        ...requestIdField,
+        publicKey: nonEmptyString,
+      })
+      .strict(),
+    z.object({ type: z.literal("notification.webPush.subscribed"), ...requestIdField }).strict(),
+    z.object({ type: z.literal("notification.webPush.unsubscribed"), ...requestIdField }).strict(),
     z.object({ type: z.literal("ready"), connectionId: nonEmptyString }).strict(),
     z
       .object({ type: z.literal("notification.published"), notification: notificationSchema })
@@ -445,6 +454,9 @@ export const realtimeServerMessageSchema: z.ZodType<RealtimeServerMessage> = z.d
           })
           .strict(),
       })
+      .strict(),
+    z
+      .object({ type: z.literal("host.daemon.restarted"), ...requestIdField, hostId: positiveId })
       .strict(),
     z
       .object({

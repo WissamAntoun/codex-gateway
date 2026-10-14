@@ -19,6 +19,7 @@ export interface BarkNotificationSettings {
 
 export interface GatewayNotificationSettings {
   bark: BarkNotificationSettings;
+  webPush: { enabled: boolean };
 }
 
 export interface GatewayConfig {

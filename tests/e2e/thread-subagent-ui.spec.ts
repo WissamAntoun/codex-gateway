@@ -100,7 +100,7 @@ test("sub-agent activity opens workspace tabs with sub-agent timelines", async (
                             {
                               id: "sub-agent-2",
                               type: "agentMessage",
-                              phase: "final_answer",
+                              phase: "final_answer" as const,
                               text: "Second untimestamped finding from Nova.",
                             },
                           ],

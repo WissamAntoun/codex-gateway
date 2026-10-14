@@ -62,8 +62,16 @@ export const projectStore = {
   },
 
   listConfigured(): ProjectRecord[] {
-    return this.list().filter((project) =>
-      currentGatewayMemoryState().configuredProjectIds.has(project.id),
+    // Discovery groups normally remain transient. Once pinned, their IDs are persisted in the
+    // pin, so persist the referenced project too; otherwise another path can reuse that ID on
+    // restart. This belongs to config export, not the browser's cache or every discovery scan.
+    const pinned = currentGatewayMemoryState().pinnedThreads;
+    return this.list().filter(
+      (project) =>
+        currentGatewayMemoryState().configuredProjectIds.has(project.id) ||
+        pinned.some(
+          (thread) => thread.hostId === project.hostId && thread.projectId === project.id,
+        ),
     );
   },
 

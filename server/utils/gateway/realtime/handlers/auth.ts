@@ -35,6 +35,7 @@ export function authenticatePeer(
   Object.assign(current, {
     authenticated: true,
     userId: user.id,
+    sessionTokenHash: hashToken(token),
     threadUnsubscribers: new Map(),
     hostMetricsUnsubscribers: new Map(),
     tmuxSessionUnsubscribers: new Map(),

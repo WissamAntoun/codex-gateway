@@ -235,7 +235,7 @@ test("switching threads keeps asynchronously rendered diff content in normal flo
       (_, index) => `+async_diff_line_${String(index + 1).padStart(3, "0")} = ${index + 1}`,
     ),
   ].join("\n");
-  const diffHistory = {
+  const diffHistory: ThreadHistoryState = {
     thread: {
       id: diffThreadId,
       turns: [
@@ -260,7 +260,7 @@ test("switching threads keeps asynchronously rendered diff content in normal flo
       ],
     },
   };
-  const shortHistory = {
+  const shortHistory: ThreadHistoryState = {
     thread: {
       id: shortThreadId,
       turns: [

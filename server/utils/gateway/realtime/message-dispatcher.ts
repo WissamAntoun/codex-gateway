@@ -55,6 +55,18 @@ export class RealtimeMessageDispatcher {
       .with({ type: "host.lifecycle.subscribe" }, (value) =>
         this.dispatchEntry(peer, value, this.handlers[value.type]),
       )
+      .with({ type: "host.daemon.restart" }, (value) =>
+        this.dispatchEntry(peer, value, this.handlers[value.type]),
+      )
+      .with({ type: "notification.webPush.configure" }, (value) =>
+        this.dispatchEntry(peer, value, this.handlers[value.type]),
+      )
+      .with({ type: "notification.webPush.subscribe" }, (value) =>
+        this.dispatchEntry(peer, value, this.handlers[value.type]),
+      )
+      .with({ type: "notification.webPush.unsubscribe" }, (value) =>
+        this.dispatchEntry(peer, value, this.handlers[value.type]),
+      )
       .with({ type: "file.git.compare" }, (value) =>
         this.dispatchEntry(peer, value, this.handlers[value.type]),
       )

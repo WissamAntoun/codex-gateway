@@ -20,6 +20,7 @@ export const DEFAULT_BARK_GROUP = "Codex Gateway";
 
 export function defaultNotificationSettings(): GatewayNotificationSettings {
   return {
+    webPush: { enabled: false },
     bark: {
       enabled: false,
       serverUrl: DEFAULT_BARK_SERVER_URL,
@@ -37,6 +38,7 @@ export function normalizeNotificationSettings(
   const deviceKey = settings?.bark?.deviceKey?.trim();
   const group = settings?.bark?.group?.trim();
   return {
+    webPush: { enabled: settings?.webPush?.enabled ?? defaults.webPush.enabled },
     bark: {
       ...defaults.bark,
       ...settings?.bark,

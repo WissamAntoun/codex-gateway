@@ -27,6 +27,7 @@ COPY public ./public
 COPY scripts ./scripts
 COPY shared ./shared
 COPY server ./server
+COPY service-worker ./service-worker
 COPY app ./app
 # Reuse precompiled packages from the deps layer. Nuxt 4.6 includes the former renderer-cache
 # fixes; application sources stay in this separate layer so an edit rebuilds the app bundle.

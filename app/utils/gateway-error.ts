@@ -41,7 +41,13 @@ export function gatewayErrorMessage(error: unknown, fallback: string) {
     firstNonEmptyString([
       payload.message,
       payload.statusMessage,
-      typeof root?.message === "string" ? root.message : null,
+      // Error.message is non-enumerable; Zod's record projection only preserves custom fields.
+      // Read the native Error contract here so every caller retains the SSH/RPC/WS failure reason.
+      error instanceof Error
+        ? error.message
+        : typeof root?.message === "string"
+          ? root.message
+          : null,
     ]) ?? fallback
   );
 }

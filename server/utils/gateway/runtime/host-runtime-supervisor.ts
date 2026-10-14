@@ -23,6 +23,11 @@ import { hostSessionEvents, type HostSessionClosedEvent } from "./host-session-e
 import { activeMainThreadMonitor } from "./active-main-thread-monitor";
 import { threadBroker } from "./broker";
 import { hostMfaManager } from "../host-mfa/host-mfa-instance";
+import { hostStore } from "../state/hosts";
+import { hostLifecycleBus } from "../state/host-events";
+import { sshConnections } from "../infra/host-services";
+import { restartCodexDaemon } from "../infra/codex/codex-daemon";
+import { runtimeLog } from "./runtime-log";
 
 class HostRuntimeSupervisor {
   private readonly slots = new Map<string, HostRuntimeSlot>();
@@ -128,9 +133,11 @@ class HostRuntimeSupervisor {
         // A changed Host reuses the same userId:hostId registry key. Let the old generation finish
         // unwinding before the replacement can create a session, otherwise the stale task can
         // overwrite the new target after HostResourceLifecycleService closes the old resources.
-        void replacedConnection.finally(() => {
-          if (this.isCurrent(slot, slot.generation)) this.scheduleConnect(slot, 0);
-        });
+        void replacedConnection
+          .finally(() => {
+            if (this.isCurrent(slot, slot.generation)) this.scheduleConnect(slot, 0);
+          })
+          .catch(() => {});
       } else {
         this.scheduleConnect(slot, 0);
       }
@@ -207,21 +214,68 @@ class HostRuntimeSupervisor {
     this.scheduleConnect(slot, 0);
   }
 
+  async restartDaemon(userId: number, hostId: number) {
+    const slot = this.slots.get(this.slotKey(userId, hostId));
+    if (!slot) throw new Error(`Host ${hostId} is not configured`);
+    if (slot.connecting) throw new Error("Host connection or restart is already in progress");
+    this.clearTimer(slot);
+    const generation = slot.generation;
+    // Share the supervisor's existing connection attempt boundary: automatic reconnects and
+    // stale scans must wait for the official restart to finish, rather than bootstrap a competing
+    // daemon while the old one drains. SSH itself stays alive, including its MFA authentication.
+    hostMfaManager.permitConnection(userId, hostId);
+    await this.connectSlot(slot, generation, async () => {
+      await runWithGatewayUser(userId, async () => {
+        const host = hostStore.getWithSecret(hostId);
+        if (host === null) throw new Error(`Host ${hostId} is not configured`);
+        const details = { userId, hostId, hostName: host.name };
+        runtimeLog("manual Codex daemon restart started", details);
+        hostLifecycleBus.emit({
+          hostId,
+          status: "restarting",
+          message: `正在重启 ${host.name} 的 Codex daemon`,
+        });
+        try {
+          await restartCodexDaemon(sshConnections, host);
+          if (!this.isCurrent(slot, generation)) throw new Error("Host restart was superseded");
+          threadBroker.disconnectHostTransport(hostId);
+          runtimeLog("manual Codex daemon restart completed", details);
+        } catch (error) {
+          runtimeLog("manual Codex daemon restart failed", {
+            ...details,
+            message: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
+        }
+      });
+    });
+    if (!this.isCurrent(slot, generation)) throw new Error("Host restart was superseded");
+  }
+
   private scheduleConnect(slot: HostRuntimeSlot, delayMs: number) {
     this.clearTimer(slot);
     const generation = slot.generation;
     slot.timer = setTimeout(() => {
       slot.timer = null;
-      void this.connectSlot(slot, generation);
+      void this.connectSlot(slot, generation).catch(() => {});
     }, delayMs);
   }
 
-  private async connectSlot(slot: HostRuntimeSlot, generation: number) {
+  private async connectSlot(
+    slot: HostRuntimeSlot,
+    generation: number,
+    beforeConnect?: () => Promise<void>,
+  ) {
     if (!this.isCurrent(slot, generation)) {
       return;
     }
     slot.connecting = true;
-    const connection = connectHostRuntime(slot, () => this.isCurrent(slot, generation));
+    slot.connected = false;
+    const connection = (async () => {
+      await beforeConnect?.();
+      if (!this.isCurrent(slot, generation)) return;
+      await connectHostRuntime(slot, () => this.isCurrent(slot, generation));
+    })();
     slot.connectPromise = connection;
     try {
       await connection;
@@ -242,6 +296,7 @@ class HostRuntimeSupervisor {
       if (!hostMfaManager.isMfaHost(slot.userId, slot.hostId)) {
         this.scheduleConnect(slot, retryDelay(slot.retryCount));
       }
+      throw error;
     } finally {
       hostMfaManager.revokeConnectionPermit(slot.userId, slot.hostId);
       // A replaced slot may already own a newer connection attempt. Never clear state belonging

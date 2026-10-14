@@ -13,6 +13,7 @@ export interface RealtimePeer {
 export interface RealtimePeerState {
   authenticated: boolean;
   userId: number | null;
+  sessionTokenHash: string | null;
   authTimer?: ReturnType<typeof setTimeout>;
   hostLifecycleUnsubscribe?: () => void;
   terminalUnsubscribe?: () => void;
@@ -42,6 +43,7 @@ export function stateFor(peer: RealtimePeer) {
     state = {
       authenticated: false,
       userId: null,
+      sessionTokenHash: null,
       threadUnsubscribers: new Map(),
       hostMetricsUnsubscribers: new Map(),
       tmuxSessionUnsubscribers: new Map(),

@@ -4,9 +4,9 @@ import { BarkRequestError, sendBarkNotification } from "./bark-provider";
 import type { ServerNotification } from "~~/shared/types";
 import pRetry from "p-retry";
 import { gatewayLog } from "../logging";
+import { markPushDelivered, wasPushDelivered } from "./push-delivery-state";
 
-const MAX_DELIVERED_NOTIFICATION_KEYS = 1_000;
-const pendingDeliveries = new Map<string, Promise<void>>();
+const pendingDeliveries = new Map<string, Promise<boolean>>();
 
 export async function deliverBarkNotification(notification: ServerNotification) {
   const userId = currentGatewayUserId();
@@ -14,9 +14,9 @@ export async function deliverBarkNotification(notification: ServerNotification) 
   const deliveryKey = `${userId}:${notification.key}`;
   const settings = normalizeNotificationSettings(currentGatewayMemoryState().notifications).bark;
   if (!settings.enabled || !settings.deviceKey) {
-    return;
+    return false;
   }
-  if (alreadyDelivered(notification.key)) return;
+  if (wasPushDelivered(notification.key)) return true;
   const pending = pendingDeliveries.get(deliveryKey);
   if (pending !== undefined) return pending;
   markPending(notification.key);
@@ -29,8 +29,9 @@ export async function deliverBarkNotification(notification: ServerNotification) 
     shouldRetry: ({ error }) => !(error instanceof BarkRequestError) || error.retryable,
   })
     .then(() => {
-      markDelivered(notification.key);
+      markPushDelivered(notification.key);
       logSuccessfulDelivery(userId, notification);
+      return true;
     })
     .finally(() => {
       pendingDeliveries.delete(deliveryKey);
@@ -38,10 +39,6 @@ export async function deliverBarkNotification(notification: ServerNotification) 
     });
   pendingDeliveries.set(deliveryKey, delivery);
   return delivery;
-}
-
-function alreadyDelivered(key: string) {
-  return currentGatewayMemoryState().deliveredNotificationKeys.includes(key);
 }
 
 function markPending(key: string) {
@@ -54,15 +51,6 @@ function markPending(key: string) {
 function clearPending(key: string) {
   currentGatewayMemoryState().pendingNotificationKeys =
     currentGatewayMemoryState().pendingNotificationKeys.filter((candidate) => candidate !== key);
-}
-
-function markDelivered(key: string) {
-  currentGatewayMemoryState().deliveredNotificationKeys = [
-    ...currentGatewayMemoryState().deliveredNotificationKeys.slice(
-      -(MAX_DELIVERED_NOTIFICATION_KEYS - 1),
-    ),
-    key,
-  ];
 }
 
 function logSuccessfulDelivery(userId: number, notification: ServerNotification) {

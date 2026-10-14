@@ -9,6 +9,7 @@ import { Switch } from "@codex-gateway/ui/switch";
 import { useGatewayConfigStore } from "@/stores/gateway-config";
 import { normalizeNotificationSettings } from "@/stores/gateway/config";
 import { errorMessageLabels, messageFromError } from "@/stores/gateway/thread-utils/identity";
+import WebPushSettings from "./notifications/WebPushSettings.vue";
 
 const store = useGatewayConfigStore();
 const { t } = useI18n();
@@ -53,12 +54,14 @@ async function saveSettings() {
     <div class="space-y-1">
       <div class="flex items-center gap-2 font-medium">
         <BellIcon class="size-4 text-ink-muted" />
-        {{ t("app.barkNotifications") }}
+        {{ t("app.notificationChannels") }}
       </div>
       <p class="text-sm text-ink-secondary">
-        {{ t("app.barkNotificationsDescription") }}
+        {{ t("app.notificationChannelsDescription") }}
       </p>
     </div>
+
+    <WebPushSettings v-model:enabled="form.webPush.enabled" />
 
     <div class="rounded-xl border border-hairline bg-canvas-soft/70 p-4">
       <div class="flex items-center justify-between gap-4">

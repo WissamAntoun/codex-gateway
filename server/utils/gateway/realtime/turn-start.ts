@@ -18,7 +18,8 @@ export async function startTurnFromRealtime(message: RealtimeTurnStartMessage) {
   const references = await validateProjectFileReferences(host, project, input.references);
   return threadBroker.startTurn(host, input.threadId, {
     text: input.text,
-    cwd: project.remotePath,
+    // Existing threads retain their app-server working directory. Gateway project groups can be
+    // renamed/repointed independently; sending a message must not override Codex's persisted cwd.
     clientUserMessageId: input.clientUserMessageId,
     model: input.model,
     effort: input.effort,

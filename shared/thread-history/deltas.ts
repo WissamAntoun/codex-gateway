@@ -27,7 +27,9 @@ export function appendAgentDelta(
       type: "agentMessage",
       id: itemIdValue,
       text: delta,
-      phase: "final_answer",
+      // Text deltas carry no phase. Only official item payloads can classify the message;
+      // guessing final_answer here would promote commentary/partial_answer into a footer.
+      phase: null,
       turnId: turnIdValue,
       status: "inProgress",
     }),

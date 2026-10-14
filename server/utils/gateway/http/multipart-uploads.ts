@@ -35,7 +35,9 @@ export function streamMultipartUploads(event: H3Event, tempDir: string) {
     const files: ParsedUploadFile[] = [];
     const writes: Promise<void>[] = [];
     let limitError: Error | null = null;
-    let writeError: unknown = null;
+    // settle() treats only undefined as success. Using null here makes every successful
+    // non-image upload reject before SFTP starts, because limitError ?? writeError is null.
+    let writeError: Error | undefined;
     let settled = false;
 
     const settle = (error?: unknown) => {
@@ -81,7 +83,7 @@ export function streamMultipartUploads(event: H3Event, tempDir: string) {
       });
       writes.push(
         writeUpload(stream, localPath).catch((error) => {
-          writeError ??= error;
+          writeError ??= ensureError(error);
         }),
       );
       files.push(file);

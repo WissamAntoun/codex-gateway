@@ -3,6 +3,19 @@ import { threadHistoryTurnFromUnknown } from "~~/shared/runtime/app-server";
 
 type RealtimeResponseMessage = Extract<RealtimeServerMessage, { requestId: string }>;
 
+export function expectWebPushConfigured(message: RealtimeResponseMessage) {
+  if (message.type !== "notification.webPush.configured")
+    unexpectedResponse("notification.webPush.configured", message.type);
+  return message;
+}
+
+export function expectHostDaemonRestarted(message: RealtimeResponseMessage) {
+  if (message.type !== "host.daemon.restarted") {
+    unexpectedResponse("host.daemon.restarted", message.type);
+  }
+  return message;
+}
+
 function unexpectedResponse(expected: RealtimeResponseMessage["type"], actual: string): never {
   throw new Error(`Expected realtime response ${expected}, received ${actual}`);
 }
