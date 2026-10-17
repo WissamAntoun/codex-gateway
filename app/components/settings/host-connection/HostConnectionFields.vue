@@ -28,6 +28,17 @@ const { t } = useI18n();
     :aria-label="t('app.sshHost')"
     :placeholder="t('app.sshHost')"
   />
+  <div class="space-y-1">
+    <Input
+      v-model="model.hostKeyFingerprint"
+      :data-testid="create ? 'host-key-fingerprint-input' : undefined"
+      :aria-label="t('app.sshHostKeyFingerprint')"
+      :placeholder="t('app.sshHostKeyFingerprint')"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <p class="break-words text-xs text-ink-secondary">{{ t("app.sshHostKeyFingerprintHelp") }}</p>
+  </div>
   <div class="grid grid-cols-[minmax(0,1fr)_minmax(6rem,8rem)] gap-2">
     <Input v-model="model.username" :aria-label="t('app.user')" :placeholder="t('app.user')" />
     <Input
@@ -60,6 +71,7 @@ const { t } = useI18n();
       >
     </SelectContent>
   </Select>
+  <p v-if="!create" class="text-xs text-ink-secondary">{{ t("app.sshCredentialsWriteOnly") }}</p>
   <Input
     v-if="model.authMode === 'privateKey'"
     v-model="model.privateKeyPath"

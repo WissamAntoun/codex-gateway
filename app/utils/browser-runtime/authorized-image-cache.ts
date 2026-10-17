@@ -1,4 +1,5 @@
 import { LRUCache } from "lru-cache";
+import { gatewayImageUrl } from "@/utils/gateway-image-url";
 
 const MAX_CACHED_IMAGE_COUNT = 40;
 const MAX_CACHED_IMAGE_BYTES = 32 * 1024 * 1024;
@@ -29,8 +30,13 @@ const authorizedImageCache = new LRUCache<
   ttlAutopurge: true,
   updateAgeOnGet: true,
   fetchMethod: async (_key, _staleValue, { context, signal }) => {
-    const response = await fetch(context.source, {
+    // Recheck at the credential boundary even when the caller already classified the URL.
+    const url = gatewayImageUrl(context.source, window.location.href);
+    if (url === null) throw new Error("Authenticated images require a Gateway image URL");
+    const response = await fetch(url.href, {
       headers: context.token === "" ? {} : { authorization: `Bearer ${context.token}` },
+      credentials: "same-origin",
+      redirect: "error",
       signal,
     });
     if (!response.ok) {

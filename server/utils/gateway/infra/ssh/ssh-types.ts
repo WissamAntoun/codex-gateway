@@ -1,7 +1,7 @@
-import type { HostRecord } from "~~/shared/types";
+import type { StoredHostRecord } from "../../storage/config-types";
 import type { Readable } from "node:stream";
 
-export type HostWithSecret = HostRecord;
+export type HostWithSecret = StoredHostRecord;
 
 export interface CommandResult {
   code: number | null;

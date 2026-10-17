@@ -23,6 +23,7 @@ logs
 .idea
 
 # Local env files
+/configs/codex-gateway/
 .env
 .env.*
 !.env.example

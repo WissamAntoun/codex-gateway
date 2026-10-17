@@ -33,6 +33,7 @@ interface RemoteEnv {
   testModel: string;
   codexBin: string;
   proxyUrl: null;
+  hostKeyFingerprint?: string;
   mfaCode?: string;
 }
 
@@ -167,6 +168,12 @@ async function prepareRemoteCodexHome(env: RemoteEnv) {
 
   const connection = await connectTestSsh({ ...env, keyboardInteractiveCode: env.mfaCode });
   try {
+    // The isolated Docker fixture is the trust source; production pins come from a trusted channel.
+    const hostKey = await execTestSsh(
+      connection,
+      "ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256",
+    );
+    env.hostKeyFingerprint = hostKey.stdout.trim().split(/\s+/)[1];
     await execTestSsh(connection, "rm -rf /home/codex/.codex && mkdir -p /home/codex/.codex");
     await uploadDirectory(connection, codexHome, "/home/codex/.codex");
     if (env.runtimeFixture === "current-codex") {

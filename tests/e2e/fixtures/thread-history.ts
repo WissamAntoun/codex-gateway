@@ -9,11 +9,11 @@ export function defaultGatewayHost(hostId = 1): HostRecord {
     username: "codex",
     port: 22,
     authMode: "password",
+    hostKeyFingerprint: null,
     privateKeyPath: null,
-    privateKey: null,
-    password: null,
     proxyUrl: null,
     hasPassword: false,
+    hasPrivateKey: false,
     createdAt: now,
     updatedAt: now,
   };

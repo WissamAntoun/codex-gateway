@@ -12,6 +12,7 @@ const remoteCodexEnvSchema = z
     port: z.string().min(1),
     username: z.string().min(1),
     password: z.string().min(1),
+    hostKeyFingerprint: z.string().startsWith("SHA256:"),
     projectPath: z.string().min(1),
     imagePath: z.string().min(1),
     runtimeFixture: z
@@ -160,6 +161,7 @@ export async function addRemoteHost(
     .locator("xpath=ancestor::div[.//*[@data-testid='host-name-input']][1]");
   await hostForm.getByTestId("host-name-input").fill(name);
   await hostForm.getByTestId("host-ssh-input").fill(remote.host);
+  await hostForm.getByTestId("host-key-fingerprint-input").fill(remote.hostKeyFingerprint);
   await hostForm.getByPlaceholder("用户").fill(remote.username);
   await hostForm.getByPlaceholder("端口").fill(remote.port);
   if (remote.proxyUrl !== undefined) {
@@ -340,12 +342,12 @@ async function openSettings(page: Page) {
   await expect(page.getByTestId("settings-panel")).toBeVisible();
 }
 
-async function openSettingsTab(page: Page, tabName: string) {
+export async function openSettingsTab(page: Page, tabName: string) {
   await openSettings(page);
   await page.getByRole("tab", { name: tabName }).click();
 }
 
-async function closeSettings(page: Page) {
+export async function closeSettings(page: Page) {
   const panel = page.getByTestId("settings-panel");
   await expect(panel)
     .toBeHidden({ timeout: 1_000 })

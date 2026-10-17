@@ -49,17 +49,23 @@ export class CodexRuntimeService {
 
     const check = this.checkAndUpgradeCodex(host)
       .then((result) => {
-        this.failedVersionChecks.delete(key);
+        if (this.versionChecks.get(key) === check) this.failedVersionChecks.delete(key);
         return result;
       })
       .catch((error: unknown) => {
-        this.failedVersionChecks.set(key, {
-          error,
-          retryAt: Date.now() + VERSION_CHECK_FAILURE_COOLDOWN_MS,
-        });
+        if (this.versionChecks.get(key) === check) {
+          this.failedVersionChecks.set(key, {
+            error,
+            retryAt: Date.now() + VERSION_CHECK_FAILURE_COOLDOWN_MS,
+          });
+        }
         throw error;
       })
-      .finally(() => this.versionChecks.delete(key));
+      .finally(() => {
+        // A trust/credential edit can replace this check while its SSH attempt is unwinding.
+        // The stale completion must not evict or poison the replacement connection's probe.
+        if (this.versionChecks.get(key) === check) this.versionChecks.delete(key);
+      });
     this.versionChecks.set(key, check);
     return check;
   }

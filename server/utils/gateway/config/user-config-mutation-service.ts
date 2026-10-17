@@ -1,14 +1,10 @@
-import type { GatewayConfig } from "~~/shared/types";
+import type { StoredGatewayConfig, StoredHostRecord } from "../storage/config-types";
 import { userStore } from "../auth/users";
 import { sshConnections } from "../infra/host-services";
 import { hostResourceLifecycle } from "../runtime/host-resource-lifecycle";
 import { hostRuntimeFingerprint } from "../runtime/host-runtime-fingerprint";
 import { hostRuntimeSupervisor } from "../runtime/host-runtime-supervisor";
-import {
-  currentGatewayMemoryState,
-  replaceCurrentGatewayMemoryState,
-  type StoredHostRecord,
-} from "../state/memory";
+import { currentGatewayMemoryState, replaceCurrentGatewayMemoryState } from "../state/memory";
 import { runtimeConfigFromMemory } from "../http/errors";
 import { pinnedThreadEvents } from "./pinned-thread-events";
 import { gatewayLog } from "../logging";
@@ -19,7 +15,7 @@ export class UserConfigMutationService {
     const draftState = structuredClone(previousState);
     replaceCurrentGatewayMemoryState(draftState);
     let result: T;
-    let nextConfig: GatewayConfig;
+    let nextConfig: StoredGatewayConfig;
     try {
       result = mutateDraft();
       pruneDanglingHostRelations(draftState);

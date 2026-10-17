@@ -124,6 +124,7 @@ done
         username: remote.username,
         port: Number(remote.port),
         authMode: "password",
+        hostKeyFingerprint: remote.hostKeyFingerprint,
         password: remote.password,
         proxyUrl: remote.proxyUrl ?? null,
       },

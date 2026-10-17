@@ -228,6 +228,8 @@ pnpm user:create <username> <password>
 ## Security Model
 
 - SSH credentials and Codex tokens stay on the server side.
+- SSH connections require a trusted OpenSSH SHA-256 host-key fingerprint in Host settings. Obtain it through an independent trusted channel, for example by running `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256` on the server. Existing Hosts without a fingerprint remain disconnected until configured; changed keys are rejected before authentication.
+- Saved SSH passwords, pasted private keys, and proxy credentials are write-only. Normal API/config exports omit them. Blank credential fields keep existing values; explicit `null` in an import clears a password or key. Exported configs preserve credentials when reimported for existing Host IDs, but moving them to another Gateway requires supplying credentials again.
 - Browser clients authenticate to Gateway with a Bearer token.
 - Stored connection config is encrypted in SQLite with `CODEX_GATEWAY_CONFIG_SECRET`.
 - Direct terminal tabs, tmux inspection, and remote Browser proxy connections are server-side SSH channels; they do not expose SSH keys or remote ports to the browser.
@@ -241,6 +243,15 @@ docker compose up -d --build
 ```
 
 The compose service exposes container port `3000` only to Docker networks. Put it behind nginx, Caddy, Cloudflare Tunnel, or another trusted reverse proxy. SQLite data is stored at `/data/codex-gateway.db` and persisted through `./data:/data`.
+
+For the local home-server replacement, use the standalone Compose file:
+
+```bash
+docker compose -f docker-compose.local.yml config --quiet
+docker compose -f docker-compose.local.yml up -d --build --wait
+```
+
+This builds the current checkout and listens on `http://127.0.0.1:28141` using host networking. It reuses `/mnt/data/codex-gateway` and reads `./configs/codex-gateway/runtime.env`, including the existing encryption secret and accounts. Both paths must already exist. Local configuration in `configs/codex-gateway/` is excluded from Git and Docker build contexts. Set `CODEX_GATEWAY_DATA_DIR` and `CODEX_GATEWAY_RUNTIME_ENV` to use different absolute paths. Keep the previous home-server service stopped; both services use the container name `codex-gateway`. Use `-f docker-compose.local.yml` for subsequent Compose commands, including `down`.
 
 Remote Browser panels use isolated origins such as `p-<hmac>.example.com`. Configure wildcard DNS for `p-*.example.com` and route those hosts to the same Codex Gateway Nitro port (`3000`). The reverse proxy must preserve the Host header and WebSocket upgrades. No second listener or published container port is required. Upstream `Content-Security-Policy` and `X-Frame-Options` are preserved, so applications that prohibit embedding remain blocked by the browser.
 

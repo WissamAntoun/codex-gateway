@@ -225,6 +225,8 @@ pnpm user:create <username> <password>
 ## 安全模型
 
 - SSH 凭据和 Codex token 只保存在服务端。
+- SSH 连接必须在主机设置中配置可信的 OpenSSH SHA-256 主机公钥指纹。请通过独立可信渠道获取，例如在服务器执行 `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`。已有主机未配置指纹时保持断开，公钥不匹配时在认证前拒绝连接。
+- 已保存的 SSH 密码、粘贴的私钥和代理凭据只写入服务端，常规 API 和配置导出不包含这些凭据。编辑时凭据留空保留原值，导入时显式设为 `null` 可清除密码或私钥。同一主机 ID 的导出配置重新导入时保留凭据；迁移到其他 Gateway 时需重新提供凭据。
 - 浏览器通过 Bearer token 登录 Gateway。
 - 连接配置使用 `CODEX_GATEWAY_CONFIG_SECRET` 加密后存入 SQLite。
 - 远程终端 tab、tmux 检查和浏览器预览代理都使用服务端 SSH channel，不会把 SSH key 或远端端口暴露给浏览器。
@@ -238,6 +240,15 @@ docker compose up -d --build
 ```
 
 默认容器只把 `3000` 暴露到 Docker 网络，适合放在 nginx、Caddy、Cloudflare Tunnel 或其他可信反向代理后面。SQLite 数据保存在 `/data/codex-gateway.db`，并通过 `./data:/data` 持久化。
+
+替换本机 home-server 服务时，使用独立的 Compose 文件：
+
+```bash
+docker compose -f docker-compose.local.yml config --quiet
+docker compose -f docker-compose.local.yml up -d --build --wait
+```
+
+该文件构建当前工作区代码，使用 host 网络监听 `http://127.0.0.1:28141`，复用 `/mnt/data/codex-gateway` 并读取 `./configs/codex-gateway/runtime.env`，保留原有加密 secret 和账号。两个路径必须已存在。`configs/codex-gateway/` 中的本机配置不会进入 Git 或 Docker 构建上下文。可通过 `CODEX_GATEWAY_DATA_DIR` 和 `CODEX_GATEWAY_RUNTIME_ENV` 指定其他绝对路径。原 home-server 服务应保持停止，两者都使用容器名 `codex-gateway`。后续 Compose 命令（包括 `down`）也应指定 `-f docker-compose.local.yml`。
 
 远程浏览器面板使用 `p-<hmac>.example.com` 形式的隔离 origin。需要为 `p-*.example.com` 配置 wildcard DNS，并把这些 host 转发到 Codex Gateway 同一个 Nitro 端口 `3000`。反向代理必须保留 Host header 和 WebSocket Upgrade；不需要增加第二个监听端口或发布新的容器端口。Gateway 会保留上游的 `Content-Security-Policy` 与 `X-Frame-Options`，因此明确禁止 iframe 嵌入的应用仍会被浏览器阻止。
 

@@ -8,11 +8,11 @@ export const hostRecordSchema = z
     username: z.string().nullable(),
     port: z.number().int().positive().nullable(),
     authMode: z.enum(["agent", "privateKey", "password"]),
+    hostKeyFingerprint: z.string().nullable(),
     privateKeyPath: z.string().nullable(),
-    privateKey: z.string().nullable().optional(),
-    password: z.string().nullable().optional(),
     proxyUrl: z.string().nullable(),
     hasPassword: z.boolean(),
+    hasPrivateKey: z.boolean(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })

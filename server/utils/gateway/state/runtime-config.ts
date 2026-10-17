@@ -1,4 +1,5 @@
 import type { GatewayConfig } from "~~/shared/types";
+import type { StoredGatewayConfig } from "../storage/config-types";
 import { normalizeNotificationSettings } from "~~/shared/config";
 import { gatewayEventStore } from "./gateway-events";
 import { currentGatewayMemoryState } from "./memory";
@@ -10,7 +11,7 @@ import { threadMetadataStore } from "./thread-metadata";
 import { threadSnapshotStore } from "./thread-snapshots";
 
 export const runtimeConfigStore = {
-  replace(config: GatewayConfig) {
+  replace(config: StoredGatewayConfig) {
     hostStore.replaceHosts(config.hosts);
     const hostIds = hostStore.hostIds();
     projectStore.pruneToHosts(hostIds);
@@ -38,10 +39,7 @@ export const runtimeConfigStore = {
   export(): GatewayConfig {
     return {
       version: 2,
-      hosts: hostStore.listWithSecret().map((host) => ({
-        ...host,
-        hasPassword: Boolean(host.password),
-      })),
+      hosts: hostStore.list(),
       pinnedThreads: currentGatewayMemoryState().pinnedThreads,
       notifications: normalizeNotificationSettings(currentGatewayMemoryState().notifications),
     };

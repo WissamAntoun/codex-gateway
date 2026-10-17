@@ -2,7 +2,6 @@ import type {
   GatewayConfig,
   GatewayEvent,
   AppServerThreadStatus,
-  HostRecord,
   PinnedThreadRecord,
   ProjectRecord,
 } from "~~/shared/types";
@@ -10,14 +9,13 @@ import { normalizeNotificationSettings } from "~~/shared/config";
 import { trimmedOrNull } from "~~/shared/utils/strings";
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { ThreadOpenSnapshot } from "../runtime/types";
+import type { StoredGatewayConfig, StoredHostRecord } from "../storage/config-types";
 
 // Gateway cursors are process-local but remain numerically monotonic across normal restarts. A
 // browser cursor from an older process is therefore either below every new event (and replays all
 // of them) or above an empty store (and triggers an explicit gap), never in the middle of a reused
 // 1..N range. Multiplying milliseconds leaves room for sustained event bursts within this process.
 const PROCESS_EVENT_ID_BASE = Date.now() * 1_000;
-
-export type StoredHostRecord = HostRecord;
 
 export interface ThreadMetadataRecord {
   hostId: number;
@@ -128,13 +126,14 @@ export function bindGatewayUser<Args extends unknown[], Result>(
   return (...args: Args) => runWithGatewayUser(userId, () => callback(...args));
 }
 
-export function buildGatewayMemoryState(config: GatewayConfig): GatewayMemoryState {
+export function buildGatewayMemoryState(config: StoredGatewayConfig): GatewayMemoryState {
   return {
     ...createGatewayMemoryState(),
     hosts: config.hosts.map((host) => ({
       ...host,
       proxyUrl: trimmedOrNull(host.proxyUrl),
       hasPassword: typeof host.password === "string" && host.password.length > 0,
+      hasPrivateKey: typeof host.privateKey === "string" && host.privateKey.length > 0,
     })),
     pinnedThreads: normalizePinnedThreads(config.pinnedThreads ?? []),
     notifications: normalizeNotificationSettings(config.notifications),

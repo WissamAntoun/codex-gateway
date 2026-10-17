@@ -123,6 +123,7 @@ cd "$HOME"
             username: environment.username,
             port: Number(environment.port),
             authMode: "password",
+            hostKeyFingerprint: environment.hostKeyFingerprint,
             password: environment.password,
             proxyUrl: environment.proxyUrl ?? null,
           },
