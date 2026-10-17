@@ -1,5 +1,6 @@
 import { useAuthStore } from "@/stores/auth";
 import { loadAuthorizedImage } from "@/utils/browser-runtime/authorized-image-cache";
+import { gatewayImageUrl } from "@/utils/gateway-image-url";
 
 export function useAuthorizedObjectUrl(source: Ref<string> | ComputedRef<string>) {
   const auth = useAuthStore();
@@ -24,11 +25,12 @@ export function useAuthorizedObjectUrl(source: Ref<string> | ComputedRef<string>
       revokeActiveUrl();
       objectUrl.value = "";
       error.value = null;
+      loading.value = false;
 
       if (!nextSource) {
         return;
       }
-      if (isPublicImageSource(nextSource)) {
+      if (!import.meta.client || gatewayImageUrl(nextSource, window.location.href) === null) {
         objectUrl.value = nextSource;
         return;
       }
@@ -67,8 +69,4 @@ export function useAuthorizedObjectUrl(source: Ref<string> | ComputedRef<string>
     loading,
     error,
   };
-}
-
-function isPublicImageSource(source: string) {
-  return /^blob:|^data:|^https?:\/\//i.test(source) && !source.startsWith("/api/");
 }

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { GatewayConfig } from "~~/shared/types";
+import type { StoredGatewayConfig } from "../storage/config-types";
 import { defaultGatewayConfig } from "../../../../shared/config";
 import { gatewayDatabase, gatewayDatabaseExists } from "../storage/database";
 import { migrateStoredConfig } from "../config/stored-config-migration";
@@ -130,7 +130,7 @@ export const userStore = {
     return Number(result.changes);
   },
 
-  loadConfig(userId: number): GatewayConfig {
+  loadConfig(userId: number): StoredGatewayConfig {
     const row = gatewayDatabase()
       .prepare("SELECT encrypted_config_json FROM user_configs WHERE user_id = ?")
       .get(userId);
@@ -149,7 +149,7 @@ export const userStore = {
     return config;
   },
 
-  saveConfig(userId: number, config: GatewayConfig) {
+  saveConfig(userId: number, config: StoredGatewayConfig) {
     const encrypted = encryptJson(config);
     const now = new Date().toISOString();
     gatewayDatabase()
@@ -165,7 +165,7 @@ export const userStore = {
       .run(userId, encrypted, now);
   },
 
-  listStoredConfigs(): Array<{ user: AuthenticatedUser; config: GatewayConfig }> {
+  listStoredConfigs(): Array<{ user: AuthenticatedUser; config: StoredGatewayConfig }> {
     if (!gatewayDatabaseExists()) {
       return [];
     }

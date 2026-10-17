@@ -4,6 +4,7 @@ import { toast } from "@codex-gateway/ui/sonner";
 import { computed, ref, watch } from "vue";
 import { Button } from "@codex-gateway/ui/button";
 import { useAuthStore } from "@/stores/auth";
+import { gatewayImageUrl } from "@/utils/gateway-image-url";
 import {
   Dialog,
   DialogContent,
@@ -97,11 +98,11 @@ async function copyImage() {
   try {
     const auth = useAuthStore();
     auth.hydrate();
-    const response = await fetch(props.source, {
-      headers:
-        props.source.startsWith("/api/") && auth.token
-          ? { authorization: `Bearer ${auth.token}` }
-          : {},
+    const url = gatewayImageUrl(props.source, window.location.href);
+    const response = await fetch(url?.href ?? props.source, {
+      headers: url !== null && auth.token ? { authorization: `Bearer ${auth.token}` } : {},
+      credentials: url === null ? "omit" : "same-origin",
+      redirect: "error",
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);

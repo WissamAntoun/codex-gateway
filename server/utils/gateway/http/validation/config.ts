@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GatewayConfig } from "~~/shared/types";
+import type { StoredGatewayConfig } from "../../storage/config-types";
 import { DEFAULT_BARK_GROUP, DEFAULT_BARK_SERVER_URL } from "~~/shared/config";
 import { trimmedOrFallback, trimmedOrNull } from "~~/shared/utils/strings";
 import { hostBaseSchema, validateHostProxy } from "./hosts-projects";
@@ -44,6 +44,7 @@ export const gatewayConfigSchema = z
           .extend({
             id: z.coerce.number().int().positive(),
             hasPassword: z.boolean().optional(),
+            hasPrivateKey: z.boolean().optional(),
             createdAt: z.string().optional(),
             updatedAt: z.string().optional(),
           })
@@ -63,7 +64,7 @@ export const gatewayConfigSchema = z
   })
   .strict();
 
-export function parseGatewayConfig(body: unknown): GatewayConfig {
+export function parseGatewayConfig(body: unknown): StoredGatewayConfig {
   const input = gatewayConfigSchema.parse(body);
   const timestamp = new Date().toISOString();
   return {
@@ -75,12 +76,17 @@ export function parseGatewayConfig(body: unknown): GatewayConfig {
       username: trimmedOrNull(host.username),
       port: host.port ?? null,
       authMode: host.authMode,
+      hostKeyFingerprint: host.hostKeyFingerprint ?? null,
       privateKeyPath: trimmedOrNull(host.privateKeyPath),
-      privateKey: host.privateKey ?? null,
-      password: host.password ?? null,
+      privateKey: host.privateKey,
+      password: host.password,
       proxyUrl: trimmedOrNull(host.proxyUrl),
       hasPassword:
         typeof host.password === "string" ? host.password.length > 0 : (host.hasPassword ?? false),
+      hasPrivateKey:
+        typeof host.privateKey === "string"
+          ? host.privateKey.length > 0
+          : (host.hasPrivateKey ?? false),
       createdAt: host.createdAt ?? timestamp,
       updatedAt: host.updatedAt ?? timestamp,
     })),

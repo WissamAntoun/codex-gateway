@@ -17,6 +17,7 @@ import { EventEmitter } from "@posva/event-emitter";
 import { SshBackgroundTaskScheduler } from "./ssh-background-tasks";
 import { hostMfaManager } from "../../host-mfa/host-mfa-instance";
 import { HOST_MFA_TIMEOUT_MS } from "../../host-mfa/host-mfa-manager";
+import { sshHostKeyVerifier } from "./ssh-host-key";
 
 const SSH_READY_TIMEOUT_MS = 30_000;
 const SSH_KEEPALIVE_INTERVAL_MS = 30_000;
@@ -58,6 +59,7 @@ export class SshConnectionPool extends EventEmitter<SshConnectionPoolEvents> {
   }
 
   connect(host: HostWithSecret): Promise<Client> {
+    sshHostKeyVerifier(host.hostKeyFingerprint);
     const resolved = resolveSshConfig(host);
     const key = this.connectionKeyFor(host);
     this.scopedHostKeys().set(host.id, key);
@@ -511,6 +513,7 @@ export class SshConnectionPool extends EventEmitter<SshConnectionPoolEvents> {
             });
         })
         .connect({
+          hostVerifier: sshHostKeyVerifier(host.hostKeyFingerprint),
           host: sock ? undefined : resolved.hostName,
           sock,
           username: host.username ?? resolved.username,
@@ -518,13 +521,15 @@ export class SshConnectionPool extends EventEmitter<SshConnectionPoolEvents> {
           agent: host.authMode === "agent" ? process.env.SSH_AUTH_SOCK : undefined,
           password: host.authMode === "password" ? (host.password ?? undefined) : undefined,
           privateKey:
-            host.privateKey !== null && host.privateKey !== undefined && host.privateKey !== ""
-              ? Buffer.from(host.privateKey)
-              : resolved.privateKeyPath !== null &&
-                  resolved.privateKeyPath !== undefined &&
-                  resolved.privateKeyPath !== ""
-                ? readFileSync(expandHome(resolved.privateKeyPath))
-                : undefined,
+            host.authMode !== "privateKey"
+              ? undefined
+              : host.privateKey !== null && host.privateKey !== undefined && host.privateKey !== ""
+                ? Buffer.from(host.privateKey)
+                : resolved.privateKeyPath !== null &&
+                    resolved.privateKeyPath !== undefined &&
+                    resolved.privateKeyPath !== ""
+                  ? readFileSync(expandHome(resolved.privateKeyPath))
+                  : undefined,
           // ssh2 keeps this timer running while keyboard-interactive waits for the MFA answer.
           // Include the user-input window or a valid challenge is misreported as a handshake
           // failure before the sidebar can finish authentication.

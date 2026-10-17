@@ -16,6 +16,7 @@ logs
 .env
 .env.*
 !.env.example
+configs/codex-gateway
 third_party
 tests
 playwright.config.ts

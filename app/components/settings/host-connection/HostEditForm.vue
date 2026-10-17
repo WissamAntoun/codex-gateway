@@ -31,7 +31,10 @@ const { isLoading, execute } = useAsyncState(
 <template>
   <div :data-testid="`host-edit-form-${host.id}`" class="max-w-2xl space-y-3">
     <HostConnectionFields v-model="form" />
-    <Button :disabled="isLoading || !form.name || !form.sshHost" @click="execute()">
+    <Button
+      :disabled="isLoading || !form.name || !form.sshHost || !form.hostKeyFingerprint"
+      @click="execute()"
+    >
       <LoaderCircleIcon v-if="isLoading" class="size-4 animate-spin" />
       <CheckIcon v-else class="size-4" />
       {{ t("app.saveHost") }}

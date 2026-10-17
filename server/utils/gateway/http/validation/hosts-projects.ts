@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SSH_HOST_KEY_FINGERPRINT_PATTERN } from "~~/shared/ssh";
 
 export const hostBaseSchema = z
   .object({
@@ -10,6 +11,12 @@ export const hostBaseSchema = z
       z.coerce.number().int().min(1).max(65535).nullable().optional(),
     ),
     authMode: z.enum(["agent", "privateKey", "password"]).default("agent"),
+    hostKeyFingerprint: z
+      .string()
+      .trim()
+      .regex(SSH_HOST_KEY_FINGERPRINT_PATTERN, "Expected an OpenSSH SHA256 host-key fingerprint")
+      .nullable()
+      .optional(),
     privateKeyPath: z.string().trim().nullable().optional(),
     privateKey: z.string().nullable().optional(),
     password: z.string().nullable().optional(),

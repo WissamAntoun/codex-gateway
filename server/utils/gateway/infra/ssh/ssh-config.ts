@@ -84,6 +84,7 @@ export function sshConnectionKey(
     host.port ?? resolved.port,
     resolved.proxy?.raw ?? "",
     host.authMode,
+    host.hostKeyFingerprint ?? "",
     secretFingerprint,
   ].join("|");
 }

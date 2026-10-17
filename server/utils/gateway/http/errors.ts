@@ -1,5 +1,6 @@
 import { defineEventHandler, getRequestURL, setResponseStatus, type H3Event } from "h3";
-import type { GatewayConfig, HostRecord } from "~~/shared/types";
+import type { HostRecord } from "~~/shared/types";
+import type { StoredGatewayConfig } from "../storage/config-types";
 import { normalizeNotificationSettings } from "~~/shared/config";
 import {
   isStaleThreadCursorErrorLike,
@@ -98,7 +99,7 @@ export function saveCurrentUserConfig(event: H3Event) {
   userStore.saveConfig(user.id, runtimeConfigFromMemory());
 }
 
-export function runtimeConfigFromMemory(): GatewayConfig {
+export function runtimeConfigFromMemory(): StoredGatewayConfig {
   const state = currentGatewayMemoryState();
   return {
     version: 2,
@@ -137,8 +138,8 @@ export function hostLogContext(host: HostRecord) {
     sshUser: host.username,
     sshPort: host.port,
     authMode: host.authMode,
-    hasPassword: host.authMode === "password" ? Boolean(host.password) : undefined,
-    hasPrivateKey: host.authMode === "privateKey" ? Boolean(host.privateKey) : undefined,
+    hasPassword: host.authMode === "password" ? host.hasPassword : undefined,
+    hasPrivateKey: host.authMode === "privateKey" ? host.hasPrivateKey : undefined,
     privateKeyPath: host.authMode === "privateKey" ? host.privateKeyPath : undefined,
     hasProxy: Boolean(host.proxyUrl),
   };

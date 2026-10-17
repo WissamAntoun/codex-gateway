@@ -7,11 +7,11 @@ export interface HostRecord {
   username: string | null;
   port: number | null;
   authMode: HostAuthMode;
+  hostKeyFingerprint: string | null;
   privateKeyPath: string | null;
-  privateKey?: string | null;
-  password?: string | null;
   proxyUrl: string | null;
   hasPassword: boolean;
+  hasPrivateKey: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +31,7 @@ export interface HostCreateInput {
   username?: string | null;
   port?: number | null;
   authMode: HostAuthMode;
+  hostKeyFingerprint?: string | null;
   privateKeyPath?: string | null;
   privateKey?: string | null;
   password?: string | null;

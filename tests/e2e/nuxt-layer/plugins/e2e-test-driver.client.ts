@@ -10,6 +10,8 @@ import { useGatewayThreadRuntimeStore } from "@/stores/gateway-thread-runtime";
 import { useGatewayThreadTurnsStore } from "@/stores/gateway-thread-turns";
 import { useGatewayThreadViewStore } from "@/stores/gateway-thread-view";
 import type { ThreadGoalStatus } from "~~/shared/types";
+import { useAuthStore } from "@/stores/auth";
+import { loadAuthorizedImage } from "@/utils/browser-runtime/authorized-image-cache";
 
 export type GoalControlCapture = { type: "status"; status: ThreadGoalStatus } | { type: "clear" };
 
@@ -19,6 +21,7 @@ export interface GatewayE2eCaptures {
 }
 
 export interface GatewayE2eTestDriver {
+  loadAuthorizedImage(source: string): Promise<void>;
   captures: GatewayE2eCaptures;
   bootstrap: ReturnType<typeof useGatewayBootstrapStore>;
   catalog: ReturnType<typeof useGatewayCatalogStore>;
@@ -34,6 +37,10 @@ export interface GatewayE2eTestDriver {
 
 function createGatewayE2eTestDriver(): GatewayE2eTestDriver {
   return {
+    async loadAuthorizedImage(source) {
+      const auth = useAuthStore();
+      await loadAuthorizedImage({ source, token: auth.token, sessionEpoch: auth.sessionEpoch });
+    },
     captures: {
       goalObjective: null,
       goalControls: [],

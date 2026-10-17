@@ -56,7 +56,7 @@ const { isLoading, execute: createHost } = useAsyncState(
       <Button
         data-testid="add-host-button"
         class="w-full"
-        :disabled="isLoading || !hostForm.name || !hostForm.sshHost"
+        :disabled="isLoading || !hostForm.name || !hostForm.sshHost || !hostForm.hostKeyFingerprint"
         @click="createHost()"
       >
         <LoaderCircleIcon v-if="isLoading" class="size-4 animate-spin" />

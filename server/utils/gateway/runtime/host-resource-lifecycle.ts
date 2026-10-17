@@ -6,13 +6,13 @@ import { threadSnapshotStore } from "../state/thread-snapshots";
 import { threadTimelinePageStore } from "../state/thread-timeline-pages";
 import { terminalManager } from "../terminal/terminal-manager";
 import { tmuxMonitorService } from "../tmux-monitor/monitor-service";
-import type { StoredHostRecord } from "../state/memory";
+import type { StoredHostRecord } from "../storage/config-types";
 import { threadBroker } from "./broker";
 import { hostRuntimeFingerprint } from "./host-runtime-fingerprint";
 import { activeMainThreadMonitor } from "./active-main-thread-monitor";
 import { threadProjectDiscovery } from "./thread-project-discovery";
 import { pendingServerRequests } from "./pending-server-requests";
-import { hostMetricsManager } from "../infra/host-services";
+import { codexRuntime, hostMetricsManager } from "../infra/host-services";
 import { threadRuntimeStatusHub } from "./thread-runtime-status-hub";
 
 export const hostResourceLifecycle = {
@@ -40,6 +40,7 @@ export const hostResourceLifecycle = {
 };
 
 function closeEphemeralResources(userId: number, hostId: number) {
+  codexRuntime.clearVersionCheck(hostId);
   pendingServerRequests.deleteHost(userId, hostId);
   activeMainThreadMonitor.forgetHost(userId, hostId);
   threadBroker.closeHost(hostId);

@@ -6,6 +6,7 @@ export interface HostConnectionFormValue {
   username: string;
   port: string;
   authMode: HostRecord["authMode"];
+  hostKeyFingerprint: string;
   privateKeyPath: string;
   privateKey: string;
   password: string;
@@ -19,6 +20,7 @@ export function emptyHostConnectionForm(): HostConnectionFormValue {
     username: "",
     port: "",
     authMode: "agent",
+    hostKeyFingerprint: "",
     privateKeyPath: "",
     privateKey: "",
     password: "",
@@ -33,9 +35,10 @@ export function hostConnectionFormFromRecord(host: HostRecord): HostConnectionFo
     username: host.username ?? "",
     port: host.port == null ? "" : String(host.port),
     authMode: host.authMode,
+    hostKeyFingerprint: host.hostKeyFingerprint ?? "",
     privateKeyPath: host.privateKeyPath ?? "",
-    privateKey: host.privateKey ?? "",
-    password: host.password ?? "",
+    privateKey: "",
+    password: "",
     proxyUrl: host.proxyUrl ?? "",
   };
 }
@@ -45,9 +48,10 @@ export function hostConnectionPayload(form: HostConnectionFormValue) {
     ...form,
     username: form.username || null,
     port: form.port ? Number(form.port) : null,
+    hostKeyFingerprint: form.hostKeyFingerprint.trim() || null,
     privateKeyPath: form.privateKeyPath || null,
-    privateKey: form.privateKey || null,
-    password: form.password || null,
+    privateKey: form.privateKey || undefined,
+    password: form.password || undefined,
     proxyUrl: form.proxyUrl || null,
   };
 }
