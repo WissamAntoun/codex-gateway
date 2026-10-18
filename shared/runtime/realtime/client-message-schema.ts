@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { approvalsReviewerSchema } from "../../approvals";
 import type { RealtimeClientMessage } from "../../types";
 import { agentProviderIdSchema } from "../../agent/providers";
 import { reasoningSummarySchema } from "../../reasoning-summary";
@@ -169,6 +170,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         effort: nullableString,
         summary: reasoningSummarySchema.nullable().optional(),
         approvalPolicy,
+        approvalsReviewer: approvalsReviewerSchema.nullable().optional(),
       })
       .strict(),
     z
@@ -183,6 +185,7 @@ export const realtimeClientMessageSchema: z.ZodType<RealtimeClientMessage> = z.d
         effort: nullableString,
         summary: reasoningSummarySchema.nullable().optional(),
         approvalPolicy,
+        approvalsReviewer: approvalsReviewerSchema.nullable().optional(),
         collaborationMode,
         images: z.array(imageInput).optional(),
         files: z.array(uploadedFileSchema).optional(),

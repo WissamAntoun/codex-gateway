@@ -13,6 +13,7 @@ export default defineGatewayEventHandler(async (event) => {
     effort: input.effort,
     summary: input.summary,
     approvalPolicy: input.approvalPolicy,
+    approvalsReviewer: input.approvalsReviewer,
     collaborationMode: input.collaborationMode,
   });
 });

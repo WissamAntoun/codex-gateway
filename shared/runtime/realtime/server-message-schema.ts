@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { approvalsReviewerSchema } from "../../approvals";
 import { hostUpgradeProgressSchema } from "../../host-upgrade";
 import type { RealtimeServerMessage } from "../../types";
 import { reasoningSummarySchema } from "../../reasoning-summary";
@@ -106,6 +107,7 @@ const threadSettingsSchema = z
     effort: nullableString,
     summary: reasoningSummarySchema.nullable().optional(),
     approvalPolicy: z.enum(["untrusted", "on-request", "never"]).nullable().optional(),
+    approvalsReviewer: approvalsReviewerSchema.nullable().optional(),
     collaborationMode: z
       .object({
         mode: z.enum(["default", "plan"]),

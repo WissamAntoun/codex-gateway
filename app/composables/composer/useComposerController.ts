@@ -1,4 +1,5 @@
 import { computed } from "vue";
+import { approvalSettingsForMode } from "~~/shared/approvals";
 import { storeToRefs } from "pinia";
 import { useAttachmentUpload } from "./useAttachmentUpload";
 import { useComposerDraft } from "./useComposerDraft";
@@ -69,10 +70,9 @@ export function useComposerController() {
       // Existing-thread settings are projected from thread/resume instead of inferred here.
       model: settings.selectedModel.value === "" ? undefined : settings.selectedModel.value,
       effort,
-      approvalPolicy:
-        settings.selectedApprovalMode.value === "custom"
-          ? undefined
-          : settings.selectedApprovalMode.value,
+      ...(settings.selectedApprovalMode.value === "custom"
+        ? {}
+        : approvalSettingsForMode(settings.selectedApprovalMode.value)),
       // Provider is a thread-creation choice. Existing threads already have a provider-bound
       // session, so turn.start must not imply that the protocol can be switched in place.
       ...(selectedThreadId.value === null ? { provider: settings.selectedProvider.value } : {}),

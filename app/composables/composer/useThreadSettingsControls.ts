@@ -1,4 +1,5 @@
 import { computed, ref, watch } from "vue";
+import { approvalModeFromSettings, approvalSettingsForMode } from "~~/shared/approvals";
 
 import { storeToRefs } from "pinia";
 import {
@@ -87,15 +88,13 @@ export function useThreadSettingsControls() {
     get: () =>
       selectedThreadId.value === null
         ? newThreadApprovalMode.value
-        : (selectedThreadSettings.value.approvalPolicy ?? "custom"),
+        : approvalModeFromSettings(selectedThreadSettings.value),
     set: (approvalPolicy) => {
       if (selectedThreadId.value === null) {
         newThreadApprovalMode.value = approvalPolicy;
         return;
       }
-      void composer.saveSelectedThreadSettings({
-        approvalPolicy: approvalPolicy === "custom" ? null : approvalPolicy,
-      });
+      void composer.saveSelectedThreadSettings(approvalSettingsForMode(approvalPolicy));
     },
   });
 

@@ -97,6 +97,9 @@ export async function sendTurn(
         ...(options.effort !== undefined ? { effort: options.effort } : {}),
         ...(options.summary !== undefined ? { summary: options.summary } : {}),
         ...(options.approvalPolicy !== undefined ? { approvalPolicy: options.approvalPolicy } : {}),
+        ...(options.approvalsReviewer !== undefined
+          ? { approvalsReviewer: options.approvalsReviewer }
+          : {}),
       });
     }
     return true;

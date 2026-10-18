@@ -23,7 +23,10 @@ test("browses earlier persisted command output", async ({ page, remoteWorkspace 
   });
 
   const intermediate = page.getByRole("button", { name: /中间过程/ }).first();
-  await intermediate.click();
+  if ((await intermediate.getAttribute("aria-expanded")) !== "true") {
+    await intermediate.click();
+  }
+  await expect(intermediate).toHaveAttribute("aria-expanded", "true");
   await command.click();
   const earlier = page.getByTestId("load-earlier-command-output");
   await expect(earlier).toBeVisible();

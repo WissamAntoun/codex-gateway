@@ -1,4 +1,7 @@
 # Standalone local deployment: docker compose -f docker-compose.local.yml up -d --build
+# Create the external web-common bridge first and set CODEX_GATEWAY_IPV4_ADDRESS to an unused
+# address in its subnet. Host SSH targets use host.docker.internal; source-restricted keys must
+# permit this fixed container address. The HTTP origin remains on 127.0.0.1:28141 for the tunnel.
 name: codex-gateway-local
 
 services:
@@ -9,15 +12,21 @@ services:
     image: codex-gateway:local
     container_name: codex-gateway
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "127.0.0.1:28141:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      web-common:
+        ipv4_address: ${CODEX_GATEWAY_IPV4_ADDRESS:?CODEX_GATEWAY_IPV4_ADDRESS is required}
     mem_limit: 1g
     memswap_limit: 1g
     env_file:
       - ${CODEX_GATEWAY_RUNTIME_ENV:-./configs/codex-gateway/runtime.env}
     environment:
       NODE_ENV: production
-      HOST: 127.0.0.1
-      PORT: 28141
+      HOST: 0.0.0.0
+      PORT: 3000
       NUXT_PUBLIC_I18N_DEFAULT_LOCALE: en
       CODEX_GATEWAY_DB_PATH: /data/codex-gateway.db
       TZ: Europe/Paris
@@ -33,7 +42,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "const s=require('node:net').connect(28141,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))",
+          "const s=require('node:net').connect(3000,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 5s
@@ -44,3 +53,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  web-common:
+    external: true

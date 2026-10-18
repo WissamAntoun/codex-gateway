@@ -22,7 +22,7 @@ function sanitizeHost(host: StoredHostRecord): HostRecord {
 }
 
 function publicProxyUrl(value: string | null) {
-  if (!value) return null;
+  if (value === null || value === "") return null;
   const url = new URL(value);
   url.username = "";
   url.password = "";

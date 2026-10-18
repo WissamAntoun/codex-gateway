@@ -1,6 +1,7 @@
 import type {
   AppServerThread,
   ApprovalPolicy,
+  ApprovalsReviewer,
   HostRecord,
   ReasoningEffort,
   ReasoningSummary,
@@ -32,6 +33,7 @@ export interface TurnStartInput {
   effort?: ReasoningEffort | null;
   summary?: ReasoningSummary | null;
   approvalPolicy?: ApprovalPolicy | null;
+  approvalsReviewer?: ApprovalsReviewer | null;
   collaborationMode?: ThreadCollaborationMode | null;
   images?: Array<{
     path?: string;
