@@ -37,6 +37,7 @@ export class ThreadSettingsService {
     if ("effort" in input) params.effort = input.effort;
     if ("summary" in input) params.summary = input.summary;
     if ("approvalPolicy" in input) params.approvalPolicy = input.approvalPolicy;
+    if ("approvalsReviewer" in input) params.approvalsReviewer = input.approvalsReviewer;
     if (input.collaborationMode !== null && input.collaborationMode !== undefined) {
       params.collaborationMode = buildAppServerCollaborationMode(input.collaborationMode);
     }

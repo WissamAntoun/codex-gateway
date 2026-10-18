@@ -1,6 +1,5 @@
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { createServer } from "node:http";
-import type { AddressInfo } from "node:net";
 import ssh2 from "ssh2";
 import { z } from "zod";
 import { expect, test } from "./fixtures/remote-workspace";
@@ -10,9 +9,7 @@ import { execRemoteSsh, openSettingsTab, closeSettings } from "./helpers/remote-
 import { shellQuote } from "../../server/utils/gateway/infra/ssh/shell";
 
 const publicHostSchema = hostRecordSchema.strict();
-const configSchema = z
-  .object({ version: z.literal(2), hosts: z.array(publicHostSchema) })
-  .passthrough();
+const configSchema = z.object({ version: z.literal(2), hosts: z.array(publicHostSchema) }).loose();
 
 test("keeps SSH credentials write-only through edits, config round trips, and reconnects", async ({
   page,
@@ -63,13 +60,14 @@ test("keeps SSH credentials write-only through edits, config round trips, and re
       { url: hostUrl, method: "PATCH", body: { ...connection, hostKeyFingerprint } },
       (value) => publicHostSchema.parse(value),
     );
-  const readModels = async () =>
+  const readModels = async (): Promise<unknown> =>
     await page.evaluate(async (hostId) => {
       const token = localStorage.getItem("codex-gateway-auth-token");
       const response = await fetch(`/api/models?hostId=${hostId}`, {
         headers: { authorization: `Bearer ${token}` },
       });
-      return await response.json();
+      const body: unknown = await response.json();
+      return body;
     }, host.id);
 
   await changePin(null);
@@ -168,7 +166,9 @@ test("never sends Gateway authorization to external image origins", async ({
     response.end();
   });
   await new Promise<void>((resolve) => receiver.listen(0, "127.0.0.1", resolve));
-  const port = (receiver.address() as AddressInfo).port;
+  const address = receiver.address();
+  if (address === null || typeof address === "string") throw new Error("Expected a TCP listener");
+  const port = address.port;
   try {
     const urls = [
       `//127.0.0.1:${port}/api/remote/images`,

@@ -156,6 +156,7 @@ export type RealtimeClientMessage =
       effort?: ReasoningEffort | null;
       summary?: ReasoningSummary | null;
       approvalPolicy?: ApprovalPolicy | null;
+      approvalsReviewer?: ComposerTurnOptions["approvalsReviewer"];
     }
   | {
       type: "turn.start";
@@ -169,6 +170,7 @@ export type RealtimeClientMessage =
       effort?: ReasoningEffort | null;
       summary?: ReasoningSummary | null;
       approvalPolicy?: ApprovalPolicy | null;
+      approvalsReviewer?: ComposerTurnOptions["approvalsReviewer"];
       collaborationMode?: ComposerTurnOptions["collaborationMode"];
       images?: ComposerTurnOptions["images"];
       files?: ComposerTurnOptions["files"];

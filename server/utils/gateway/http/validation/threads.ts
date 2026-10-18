@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { approvalsReviewerSchema } from "~~/shared/approvals";
 import { INITIAL_TIMELINE_PAGE_LIMIT } from "~~/shared/config";
 import { agentProviderIdSchema } from "~~/shared/agent/providers";
 import { reasoningSummarySchema } from "~~/shared/reasoning-summary";
@@ -38,6 +39,7 @@ export const threadSettingFields = {
   effort: z.string().trim().min(1).nullable().optional(),
   summary: reasoningSummarySchema.nullable().optional(),
   approvalPolicy: z.enum(["untrusted", "on-request", "never"]).nullable().optional(),
+  approvalsReviewer: approvalsReviewerSchema.nullable().optional(),
 };
 
 const collaborationModeSchema = z

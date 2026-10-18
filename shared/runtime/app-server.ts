@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { reasoningSummarySchema } from "../reasoning-summary";
+import { approvalsReviewerSchema } from "../approvals";
 import type {
   ApprovalPolicy,
   ThreadCollaborationMode,
@@ -74,6 +75,7 @@ const appServerThreadSettingsSchema = z
     effort: z.string().nullable().optional(),
     summary: reasoningSummarySchema.nullable(),
     approvalPolicy: z.unknown(),
+    approvalsReviewer: approvalsReviewerSchema,
     collaborationMode: appServerCollaborationModeSchema,
   })
   .loose();
@@ -101,6 +103,7 @@ export function threadSettingsFromAppServer(value: unknown): ThreadSettingsState
     effort: parsed.data.effort ?? null,
     summary: parsed.data.summary,
     approvalPolicy: approvalPolicyFromAppServer(parsed.data.approvalPolicy),
+    approvalsReviewer: parsed.data.approvalsReviewer,
     collaborationMode: threadCollaborationModeFromAppServer(parsed.data.collaborationMode),
   };
 }
@@ -545,6 +548,7 @@ const threadResumeResultSchema = z
     thread: appServerThreadSchema,
     model: z.string().min(1),
     reasoningEffort: z.string().nullable(),
+    approvalsReviewer: approvalsReviewerSchema,
     approvalPolicy: z.union([
       z.literal("untrusted"),
       z.literal("on-request"),

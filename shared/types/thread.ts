@@ -91,6 +91,7 @@ export interface ThreadAttachmentsPage {
 }
 
 export type ApprovalPolicy = "untrusted" | "on-request" | "never";
+export type ApprovalsReviewer = "user" | "auto_review" | "guardian_subagent";
 export type ReasoningEffort = string;
 
 export interface ThreadCollaborationMode {
@@ -107,6 +108,7 @@ export interface ThreadSettingsState {
   effort?: ReasoningEffort | null;
   summary?: ReasoningSummary | null;
   approvalPolicy?: ApprovalPolicy | null;
+  approvalsReviewer?: ApprovalsReviewer | null;
   collaborationMode?: ThreadCollaborationMode | null;
 }
 
@@ -145,6 +147,7 @@ export interface ComposerTurnOptions {
   effort?: ReasoningEffort | null;
   summary?: ReasoningSummary | null;
   approvalPolicy?: ApprovalPolicy | null;
+  approvalsReviewer?: ApprovalsReviewer | null;
   collaborationMode?: ThreadCollaborationMode | null;
   images?: Array<{
     path?: string;

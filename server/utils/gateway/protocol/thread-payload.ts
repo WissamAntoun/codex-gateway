@@ -11,6 +11,7 @@ import {
 import { normalizeTokenUsage } from "~~/shared/token-usage";
 import { DEFAULT_REASONING_SUMMARY } from "~~/shared/reasoning-summary";
 import { recordFromUnknown } from "~~/shared/utils/records";
+import { approvalsReviewerSchema } from "~~/shared/approvals";
 import type { TurnStartInput } from "../runtime/types";
 
 export function buildUserInput(input: { text: string; images?: TurnStartInput["images"] }) {
@@ -53,6 +54,7 @@ export function buildTurnStartParams(
     // Explicit "none" remains valid; steer does not start a turn or change its settings.
     summary: input.summary ?? DEFAULT_REASONING_SUMMARY,
     approvalPolicy: input.approvalPolicy ?? null,
+    approvalsReviewer: input.approvalsReviewer ?? null,
     collaborationMode:
       input.collaborationMode !== null && input.collaborationMode !== undefined
         ? buildAppServerCollaborationMode(input.collaborationMode)
@@ -62,12 +64,16 @@ export function buildTurnStartParams(
 }
 
 export function buildThreadStartParams(
-  input: Pick<TurnStartInput, "cwd" | "model" | "effort" | "summary" | "approvalPolicy">,
+  input: Pick<
+    TurnStartInput,
+    "cwd" | "model" | "effort" | "summary" | "approvalPolicy" | "approvalsReviewer"
+  >,
 ) {
   return {
     cwd: input.cwd === "" ? undefined : input.cwd,
     model: input.model === "" ? undefined : input.model,
     approvalPolicy: input.approvalPolicy ?? undefined,
+    approvalsReviewer: input.approvalsReviewer ?? undefined,
     // thread/start has no top-level effort/summary fields. Its official per-thread config overlay
     // also covers Goal-only sessions before the first explicit turn/start; it never writes TOML.
     config: {
@@ -117,6 +123,10 @@ export function extractThreadSettings(source: unknown): ThreadSettingsState {
     approvalPolicy: normalizeApprovalPolicy(
       threadSettings?.approvalPolicy ?? sourceRecord?.approvalPolicy,
     ),
+    approvalsReviewer:
+      approvalsReviewerSchema.safeParse(
+        threadSettings?.approvalsReviewer ?? sourceRecord?.approvalsReviewer,
+      ).data ?? null,
     collaborationMode: resumedCollaborationMode,
   };
 }

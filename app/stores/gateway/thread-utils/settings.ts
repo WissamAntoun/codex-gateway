@@ -1,5 +1,6 @@
 import type { ThreadSettingsState } from "~~/shared/types";
 import { trimmedOrNull } from "~~/shared/utils/strings";
+import { approvalsReviewerSchema } from "~~/shared/approvals";
 
 export function normalizeThreadSettings(
   settings: ThreadSettingsState | null | undefined,
@@ -22,6 +23,12 @@ export function normalizeThreadSettings(
     ...(Object.hasOwn(settings, "collaborationMode")
       ? { collaborationMode: normalizeCollaborationMode(settings.collaborationMode) }
       : {}),
+    ...(Object.hasOwn(settings, "approvalsReviewer")
+      ? {
+          approvalsReviewer:
+            approvalsReviewerSchema.safeParse(settings.approvalsReviewer).data ?? null,
+        }
+      : {}),
   };
 }
 
@@ -36,6 +43,9 @@ export function mergeThreadSettings(
     ...(Object.hasOwn(next, "summary") ? { summary: next.summary ?? null } : {}),
     ...(Object.hasOwn(next, "approvalPolicy")
       ? { approvalPolicy: next.approvalPolicy ?? null }
+      : {}),
+    ...(Object.hasOwn(next, "approvalsReviewer")
+      ? { approvalsReviewer: next.approvalsReviewer ?? null }
       : {}),
     ...(Object.hasOwn(next, "collaborationMode")
       ? { collaborationMode: next.collaborationMode ?? null }

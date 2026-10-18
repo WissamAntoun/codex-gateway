@@ -10,6 +10,7 @@ export type {
 } from "./types/records";
 export type {
   ApprovalPolicy,
+  ApprovalsReviewer,
   AppServerSessionSource,
   AppServerSubAgentSource,
   AppServerThread,
