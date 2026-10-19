@@ -13,7 +13,7 @@ test("browses earlier persisted command output", async ({ page, remoteWorkspace 
   await page
     .getByPlaceholder("输入后续修改要求")
     .fill(
-      "请执行这一条命令一次：awk 'BEGIN { for (i=1; i<=6000; i++) printf \"output-%05d abcdefghijklmnopqrstuvwxyz\\n\", i }'。不需要完整阅读输出，执行后只回复“输出完成”。",
+      "请原样执行这一条命令一次，不要添加重定向、管道或修改命令，必须保留标准输出以测试历史输出浏览功能：awk 'BEGIN { for (i=1; i<=6000; i++) printf \"output-%05d abcdefghijklmnopqrstuvwxyz\\n\", i }'。执行后只回复“输出完成”。",
     );
   await page.getByTestId("send-turn-button").click();
   const command = page.getByRole("button", { name: /awk.*6000/ }).first();
